@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // Vercel Postgres
+  url      = env("POSTGRES_PRISMA_URL") // Uses pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // Uses direct connection
+}
+
+// Enums
+enum Role {
+  ADMIN
+  COMMANDER
+  OFFICER
+  VIEWER
+}
+
+enum SearchStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
+}
+
+enum LocationType {
+  KOLKATA
+  OUTSIDE
+}
+
+enum PremiseNature {
+  RESIDENTIAL
+  COMMERCIAL
+  INDUSTRIAL
+}
+
+enum RecceStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  COULD_NOT_LOCATE
+}
+
+enum DecisionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  ON_HOLD
+}
+
+enum AllocationStatus {
+  PENDING
+  DONE
+}
+
+enum ResourceType {
+  WITNESS
+  DRIVER
+  OFFICIAL
+  CRPF
+}
+
+enum ResourceStatus {
+  AVAILABLE
+  ASSIGNED
+}
+
+// Models
+
+model User {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  passwordHash  String
+  role          Role      @default(VIEWER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Case {
+  id          String   @id @default(uuid())
+  caseNumber  String   @unique
+  title       String
+  description String?
+  status      String   @default("OPEN")
+  searches    Search[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Search {
+  id        String       @id @default(uuid())
+  caseId    String
+  case      Case         @relation(fields: [caseId], references: [id])
+  name      String
+  date      DateTime
+  status    SearchStatus @default(PLANNED)
+  premises  Premise[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model Premise {
+  id              String         @id @default(uuid())
+  searchId        String
+  search          Search         @relation(fields: [searchId], references: [id])
+  name            String
+  address         String
+  locationType    LocationType
+  nature          PremiseNature
+  
+  // Geo Data
+  latitude        Float?
+  longitude       Float?
+  liveLocationUrl String?
+  photoUrl        String?
+
+  // Stages
+  recceStatus     RecceStatus    @default(PENDING)
+  recceNotes      String?
+  
+  decisionStatus  DecisionStatus @default(PENDING)
+  decisionNotes   String?
+
+  allocationStatus AllocationStatus @default(PENDING)
+  
+  // Resource Requirements (Counts)
+  reqWitnessMale    Int @default(0)
+  reqWitnessFemale  Int @default(0)
+  reqCrpfMale       Int @default(0)
+  reqCrpfFemale     Int @default(0)
+  reqDrivers        Int @default(0)
+  reqOfficers       Int @default(0)
+
+  // Assigned Resources
+  assignedResources ResourceAllocation[]
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model Resource {
+  id          String       @id @default(uuid())
+  type        ResourceType
+  name        String
+  details     String?      // e.g., Vehicle Number, Rank
+  status      ResourceStatus @default(AVAILABLE)
+  
+  allocations ResourceAllocation[]
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model ResourceAllocation {
+  id         String   @id @default(uuid())
+  premiseId  String
+  premise    Premise  @relation(fields: [premiseId], references: [id])
+  resourceId String
+  resource   Resource @relation(fields: [resourceId], references: [id])
+  
+  assignedAt DateTime @default(now())
+}
+
+model FieldConfig {
+  id         String  @id @default(uuid())
+  viewName   String
+  fieldName  String
+  isRequired Boolean @default(false)
+  isVisible  Boolean @default(true)
+
+  @@unique([viewName, fieldName])
+}
