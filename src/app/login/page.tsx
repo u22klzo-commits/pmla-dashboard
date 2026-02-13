@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -62,6 +63,13 @@ export default function LoginPage() {
                         {error && <p className="text-red-500 text-sm">{error}</p>}
                         <Button type="submit" className="w-full">Sign In</Button>
                     </form>
+
+                    <p className="text-sm text-center text-muted-foreground mt-4">
+                        Don&apos;t have an account?{" "}
+                        <Link href="/signup" className="text-primary underline hover:no-underline">
+                            Sign up
+                        </Link>
+                    </p>
                 </CardContent>
             </Card>
         </div>
