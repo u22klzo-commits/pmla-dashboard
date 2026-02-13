@@ -68,6 +68,7 @@ const premiseFormSchema = z.object({
     distanceFromCrpfCamp: z.number().optional(),
     liveLocationUrl1: z.string().url().optional().or(z.literal('')),
     liveLocationUrl2: z.string().url().optional().or(z.literal('')),
+    photoUrl: z.string().url().optional().or(z.literal('')),
     recceNotes: z.string().optional(),
 })
 
@@ -89,6 +90,7 @@ export interface ExistingPremise {
     distanceFromCrpfCamp?: number | null
     liveLocationUrl1?: string | null
     liveLocationUrl2?: string | null
+    photoUrl?: string | null
     recceNotes?: string | null
 }
 
@@ -119,6 +121,7 @@ export function PremiseForm({ searchId, premise, onSuccess }: PremiseFormProps) 
             distanceFromCrpfCamp: premise?.distanceFromCrpfCamp ?? undefined,
             liveLocationUrl1: premise?.liveLocationUrl1 || '',
             liveLocationUrl2: premise?.liveLocationUrl2 || '',
+            photoUrl: premise?.photoUrl || '',
             recceNotes: premise?.recceNotes || '',
         },
     })
@@ -143,6 +146,7 @@ export function PremiseForm({ searchId, premise, onSuccess }: PremiseFormProps) 
                     distanceFromCrpfCamp: values.distanceFromCrpfCamp,
                     liveLocationUrl1: values.liveLocationUrl1,
                     liveLocationUrl2: values.liveLocationUrl2,
+                    photoUrl: values.photoUrl,
                     recceNotes: values.recceNotes,
                 })
 
@@ -169,6 +173,7 @@ export function PremiseForm({ searchId, premise, onSuccess }: PremiseFormProps) 
                     distanceFromCrpfCamp: values.distanceFromCrpfCamp,
                     liveLocationUrl1: values.liveLocationUrl1,
                     liveLocationUrl2: values.liveLocationUrl2,
+                    photoUrl: values.photoUrl,
                     recceNotes: values.recceNotes,
                 })
 
@@ -450,6 +455,26 @@ export function PremiseForm({ searchId, premise, onSuccess }: PremiseFormProps) 
                                             {...field}
                                         />
                                     </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="photoUrl"
+                            render={({ field }) => (
+                                <FormItem className="md:col-span-3">
+                                    <FormLabel>Photo Link</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            type="url"
+                                            placeholder="https://drive.google.com/..."
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormDescription>
+                                        Link to premise photo (Google Drive, etc.)
+                                    </FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}

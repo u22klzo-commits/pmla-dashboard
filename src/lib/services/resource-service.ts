@@ -9,7 +9,24 @@ export class ResourceService {
         try {
             const where: any = {}
             if (type) where.type = type
-            if (searchId) where.searchId = searchId
+
+            if (searchId) {
+                // Find resources that are either:
+                // 1. Directly linked to this search via Resource.searchId
+                // 2. Allocated to any premise belonging to this search
+                where.OR = [
+                    { searchId },
+                    {
+                        allocations: {
+                            some: {
+                                premise: {
+                                    searchId: searchId
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
 
             const resources = await prisma.resource.findMany({
                 where,

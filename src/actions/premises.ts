@@ -40,6 +40,7 @@ export async function createPremise(data: {
     distanceFromCrpfCamp?: number,
     liveLocationUrl1?: string,
     liveLocationUrl2?: string,
+    photoUrl?: string,
     recceNotes?: string
 }) {
     const result = await premiseService.createPremise(data)
@@ -64,6 +65,7 @@ export async function updatePremise(
         distanceFromCrpfCamp?: number
         liveLocationUrl1?: string
         liveLocationUrl2?: string
+        photoUrl?: string
         recceNotes?: string
     }
 ) {

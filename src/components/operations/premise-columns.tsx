@@ -38,6 +38,7 @@ export type PremiseColumn = {
     gpsLong?: number | null
     liveLocationUrl1?: string | null
     liveLocationUrl2?: string | null
+    photoUrl?: string | null
 }
 
 const natureIcons: Record<string, React.ElementType> = {
@@ -117,9 +118,11 @@ export const premiseColumns: ColumnDef<PremiseColumn>[] = [
             const source = row.getValue("sourceOfInfo") as string | null
             if (!source) return <span className="text-muted-foreground">-</span>
             return (
-                <Badge variant="outline" className={sourceColors[source] || ""}>
-                    {source.charAt(0) + source.slice(1).toLowerCase()}
-                </Badge>
+                <div className="flex flex-col gap-1">
+                    <Badge variant="outline" className={sourceColors[source] || ""}>
+                        {source.charAt(0) + source.slice(1).toLowerCase()}
+                    </Badge>
+                </div>
             )
         }
     },
@@ -146,11 +149,12 @@ export const premiseColumns: ColumnDef<PremiseColumn>[] = [
     },
     {
         id: "liveLocation",
-        header: "Live",
+        header: "Links",
         cell: ({ row }) => {
             const url1 = row.original.liveLocationUrl1
             const url2 = row.original.liveLocationUrl2
-            if (!url1 && !url2) return <span className="text-muted-foreground">-</span>
+            const photoUrl = row.original.photoUrl
+            if (!url1 && !url2 && !photoUrl) return <span className="text-muted-foreground">-</span>
             return (
                 <div className="flex gap-1">
                     {url1 && (
@@ -164,6 +168,13 @@ export const premiseColumns: ColumnDef<PremiseColumn>[] = [
                         <a href={url2} target="_blank" rel="noopener noreferrer" title="Live Location 2">
                             <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
                                 <ExternalLink className="h-3 w-3 text-green-600" />
+                            </Button>
+                        </a>
+                    )}
+                    {photoUrl && (
+                        <a href={photoUrl} target="_blank" rel="noopener noreferrer" title="View Photo">
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                <Eye className="h-3 w-3 text-purple-600" />
                             </Button>
                         </a>
                     )}

@@ -66,6 +66,7 @@ model Premise {
   distanceFromCrpfCamp Float?
   liveLocationUrl1     String?
   liveLocationUrl2     String?
+  photoUrl             String?
   recceStatus          RecceStatus          @default(PENDING)
   recceNotes           String?
   decisionStatus       DecisionStatus       @default(PENDING)

@@ -1,5 +1,8 @@
 
 import { getAllPremises } from "@/actions/premises"
+import { getSelectedSearchId } from "@/actions/context"
+import { getSearchById, getSearches } from "@/actions/searches"
+import { SearchSwitcher } from "@/components/searches/search-switcher"
 import { DataTable } from "@/components/ui/data-table"
 import { premiseColumns } from "@/components/operations/premise-columns"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -7,10 +10,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 export const dynamic = "force-dynamic"
 
 export default async function DecisionStagePage() {
-    const allPremises = await getAllPremises()
+    const selectedSearchId = await getSelectedSearchId()
+
+    // Fetch premises filtered by selectedSearchId (if any)
+    const allPremises = await getAllPremises(selectedSearchId || undefined)
 
     // Focus on premises awaiting decision or with completed recce
     const decisionPremises = allPremises.filter(p => p.recceStatus === 'COMPLETED')
+
+    // Get search info for header display
+    const currentSearch = selectedSearchId ? await getSearchById(selectedSearchId) : null
+    const searches = await getSearches()
 
     const formattedData = decisionPremises.map(p => ({
         id: p.id,
@@ -35,16 +45,27 @@ export default async function DecisionStagePage() {
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <div className="flex items-center justify-between space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">Decision to Search</h2>
-                <div className="flex items-center space-x-2">
+                <div className="space-y-1">
+                    <h2 className="text-3xl font-bold tracking-tight">Decision to Search</h2>
+                    {currentSearch && (
+                        <p className="text-muted-foreground text-sm">
+                            Case: {currentSearch.case.caseNumber} • Search: {currentSearch.name}
+                        </p>
+                    )}
                 </div>
+                <SearchSwitcher
+                    currentSearchId={selectedSearchId || 'global-view'}
+                    searches={searches as any}
+                />
             </div>
 
             <Card>
                 <CardHeader>
                     <CardTitle>Premises Pending Decision</CardTitle>
                     <CardDescription>
-                        Approve or Reject search operations for premises with completed recce.
+                        {currentSearch
+                            ? `Approve or Reject search operations for "${currentSearch.name}".`
+                            : "Approve or Reject search operations for premises with completed recce (all searches)."}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -59,3 +80,4 @@ export default async function DecisionStagePage() {
         </div>
     )
 }
+

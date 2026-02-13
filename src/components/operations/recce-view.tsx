@@ -9,7 +9,7 @@ import {
     CardTitle,
 } from "@/components/ui/card"
 import dynamic from 'next/dynamic'
-import { Plus, MapPin, Search, Table as TableIcon } from "lucide-react"
+import { Plus, MapPin, Search, Table as TableIcon, Map as MapIcon } from "lucide-react"
 import {
     Table,
     TableBody,
@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { CreatePremiseDialog } from "@/components/premises/create-premise-dialog"
 import { PremiseWithRelations } from "@/lib/services/premise-service"
+import Link from "next/link"
 
 const RecceMap = dynamic(() => import("@/components/maps/recce-map"), {
     ssr: false,
@@ -35,10 +36,13 @@ interface RecceViewProps {
     isGlobal?: boolean
 }
 
+type ViewMode = 'map' | 'table'
+
 export function RecceView({ premises, searchId, isGlobal = false }: RecceViewProps) {
     const [selectedPremiseId, setSelectedPremiseId] = useState<string | null>(null)
     const [prefillCoords, setPrefillCoords] = useState<{ lat: number, lng: number } | null>(null)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
+    const [viewMode, setViewMode] = useState<ViewMode>('map')
 
     const coloredPremises = useMemo(() => {
         const colors = [
@@ -88,131 +92,267 @@ export function RecceView({ premises, searchId, isGlobal = false }: RecceViewPro
     }
 
     return (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <div className="col-span-4">
-                <Card className="overflow-hidden border-none shadow-xl bg-background/50 backdrop-blur-md h-[600px] flex flex-col">
-                    <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <CardTitle className="text-xl">Intelligence Map</CardTitle>
-                                <CardDescription>Real-time spatial visualization of operation targets.</CardDescription>
-                            </div>
-                            <div className="flex gap-2">
-                                {isGlobal && <Badge variant="secondary" className="bg-orange-500/10 text-orange-600 border-orange-200">GLOBAL OVERVIEW</Badge>}
-                                <Badge variant="outline" className="font-mono">
-                                    {premises.length} TARGETS
-                                </Badge>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="p-0 flex-1">
-                        <div className="hidden">
-                            <CreatePremiseDialog
-                                searchId={searchId === 'global' ? '' : searchId}
-                                open={isDialogOpen}
-                                onOpenChange={setIsDialogOpen}
-                                defaultValues={prefillCoords ? {
-                                    gpsLat: prefillCoords.lat.toString(),
-                                    gpsLong: prefillCoords.lng.toString()
-                                } : undefined}
-                            />
-                        </div>
-                        <RecceMap
-                            key={searchId}
-                            premises={coloredPremises as any}
-                            selectedPremiseId={selectedPremiseId}
-                            onMarkerClick={(id) => setSelectedPremiseId(id)}
-                            onAddPremise={isGlobal ? undefined : (p) => {
-                                setPrefillCoords({ lat: p.lat, lng: p.lng })
-                                setIsDialogOpen(true)
-                            }}
-                            height="100%"
-                            hqLocation={[22.5726, 88.3639] /* Default to Operations Headquarters */}
-                        />
-                    </CardContent>
-                </Card>
+        <div className="space-y-4">
+            {/* View Toggle */}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1 rounded-lg border bg-muted/50 p-1">
+                    <Button
+                        variant={viewMode === 'map' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setViewMode('map')}
+                        className="gap-1.5 h-8"
+                    >
+                        <MapIcon className="h-3.5 w-3.5" />
+                        Map View
+                    </Button>
+                    <Button
+                        variant={viewMode === 'table' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setViewMode('table')}
+                        className="gap-1.5 h-8"
+                    >
+                        <TableIcon className="h-3.5 w-3.5" />
+                        Table View
+                    </Button>
+                </div>
+                {!isGlobal && <CreatePremiseDialog searchId={searchId} />}
             </div>
 
-            <div className="col-span-3">
-                <Card className="h-[600px] flex flex-col border-none shadow-xl bg-background/50 backdrop-blur-md">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-xl">Target Directory</CardTitle>
-                        <CardDescription>
-                            {isGlobal ? "Master operation target list." : "Detailed status and reconnaissance notes."}
-                        </CardDescription>
+            {viewMode === 'map' ? (
+                /* ===== MAP VIEW ===== */
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+                    <div className="col-span-4">
+                        <Card className="overflow-hidden border-none shadow-xl bg-background/50 backdrop-blur-md h-[600px] flex flex-col">
+                            <CardHeader className="pb-2">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <CardTitle className="text-xl">Intelligence Map</CardTitle>
+                                        <CardDescription>Real-time spatial visualization of operation targets.</CardDescription>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        {isGlobal && <Badge variant="secondary" className="bg-orange-500/10 text-orange-600 border-orange-200">GLOBAL OVERVIEW</Badge>}
+                                        <Badge variant="outline" className="font-mono">
+                                            {premises.length} TARGETS
+                                        </Badge>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="p-0 flex-1">
+                                <div className="hidden">
+                                    <CreatePremiseDialog
+                                        searchId={searchId === 'global' ? '' : searchId}
+                                        open={isDialogOpen}
+                                        onOpenChange={setIsDialogOpen}
+                                        defaultValues={prefillCoords ? {
+                                            gpsLat: prefillCoords.lat.toString(),
+                                            gpsLong: prefillCoords.lng.toString()
+                                        } : undefined}
+                                    />
+                                </div>
+                                <RecceMap
+                                    key={searchId}
+                                    premises={coloredPremises as any}
+                                    selectedPremiseId={selectedPremiseId}
+                                    onMarkerClick={(id) => setSelectedPremiseId(id)}
+                                    onAddPremise={isGlobal ? undefined : (p) => {
+                                        setPrefillCoords({ lat: p.lat, lng: p.lng })
+                                        setIsDialogOpen(true)
+                                    }}
+                                    height="100%"
+                                    hqLocation={[22.5726, 88.3639] /* Default to Operations Headquarters */}
+                                />
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <div className="col-span-3">
+                        <Card className="h-[600px] flex flex-col border-none shadow-xl bg-background/50 backdrop-blur-md">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-xl">Target Directory</CardTitle>
+                                <CardDescription>
+                                    {isGlobal ? "Master operation target list." : "Detailed status and reconnaissance notes."}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex-1 overflow-auto p-0">
+                                <Table>
+                                    <TableHeader className="bg-muted/50 sticky top-0 z-10">
+                                        <TableRow>
+                                            <TableHead className="w-[180px]">Location</TableHead>
+                                            <TableHead>Deployment</TableHead>
+                                            <TableHead className="text-right pr-4">Status</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {coloredPremises.map((p) => (
+                                            <TableRow
+                                                key={p.id}
+                                                className={cn(
+                                                    "cursor-pointer transition-colors",
+                                                    selectedPremiseId === p.id ? "bg-primary/5 border-l-4 border-l-primary" : "hover:bg-muted/30"
+                                                )}
+                                                onClick={() => setSelectedPremiseId(p.id)}
+                                            >
+                                                <TableCell className="font-medium py-3">
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <span className="text-sm font-bold truncate max-w-[150px]">{p.name}</span>
+                                                        <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">{p.address}</span>
+                                                        <div className="flex items-center gap-1.5 mt-1">
+                                                            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: p.color }} />
+                                                            <span className="text-[9px] uppercase tracking-tighter text-muted-foreground font-semibold">
+                                                                {isGlobal ? p.searchName : p.owner}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="py-3">
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className="text-[10px] font-bold text-muted-foreground">{p.resourceSummary}</span>
+                                                        <div className="flex gap-1 h-1 w-full bg-muted rounded-full overflow-hidden">
+                                                            <div className="h-full bg-blue-500" style={{ width: p.officers > 0 ? '60%' : '0%' }} />
+                                                            <div className="h-full bg-indigo-500" style={{ width: p.hasCrpf ? '40%' : '0%' }} />
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right py-3 pr-4">
+                                                    <div className="flex flex-col items-end gap-1">
+                                                        <Badge
+                                                            variant={p.recceStatus === 'COMPLETED' ? 'default' : 'outline'}
+                                                            className={cn(
+                                                                "text-[9px] h-4 px-1 leading-none",
+                                                                p.recceStatus === 'PENDING' && "bg-yellow-500/10 text-yellow-600 border-yellow-200",
+                                                                p.recceStatus === 'IN_PROGRESS' && "bg-blue-500/10 text-blue-600 border-blue-200",
+                                                                p.recceStatus === 'COMPLETED' && "bg-green-500/10 text-green-600 border-green-200"
+                                                            )}
+                                                        >
+                                                            {p.recceStatus}
+                                                        </Badge>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className={cn(
+                                                                "h-6 w-6",
+                                                                selectedPremiseId === p.id ? "text-primary bg-primary/10" : "text-muted-foreground"
+                                                            )}
+                                                        >
+                                                            <MapPin className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
+            ) : (
+                /* ===== TABLE VIEW ===== */
+                <Card className="border-none shadow-xl bg-background/50 backdrop-blur-md">
+                    <CardHeader>
+                        <CardTitle className="text-xl">Premise Intelligence Table</CardTitle>
+                        <CardDescription>Full tabular view of all reconnaissance targets with detailed fields.</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex-1 overflow-auto p-0">
-                        <Table>
-                            <TableHeader className="bg-muted/50 sticky top-0 z-10">
-                                <TableRow>
-                                    <TableHead className="w-[180px]">Location</TableHead>
-                                    <TableHead>Deployment</TableHead>
-                                    <TableHead className="text-right pr-4">Status</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {coloredPremises.map((p) => (
-                                    <TableRow
-                                        key={p.id}
-                                        className={cn(
-                                            "cursor-pointer transition-colors",
-                                            selectedPremiseId === p.id ? "bg-primary/5 border-l-4 border-l-primary" : "hover:bg-muted/30"
-                                        )}
-                                        onClick={() => setSelectedPremiseId(p.id)}
-                                    >
-                                        <TableCell className="font-medium py-3">
-                                            <div className="flex flex-col gap-0.5">
-                                                <span className="text-sm font-bold truncate max-w-[150px]">{p.name}</span>
-                                                <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">{p.address}</span>
-                                                <div className="flex items-center gap-1.5 mt-1">
-                                                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: p.color }} />
-                                                    <span className="text-[9px] uppercase tracking-tighter text-muted-foreground font-semibold">
-                                                        {isGlobal ? p.searchName : p.owner}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="py-3">
-                                            <div className="flex flex-col gap-1">
-                                                <span className="text-[10px] font-bold text-muted-foreground">{p.resourceSummary}</span>
-                                                <div className="flex gap-1 h-1 w-full bg-muted rounded-full overflow-hidden">
-                                                    <div className="h-full bg-blue-500" style={{ width: p.officers > 0 ? '60%' : '0%' }} />
-                                                    <div className="h-full bg-indigo-500" style={{ width: p.hasCrpf ? '40%' : '0%' }} />
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-right py-3 pr-4">
-                                            <div className="flex flex-col items-end gap-1">
-                                                <Badge
-                                                    variant={p.recceStatus === 'COMPLETED' ? 'default' : 'outline'}
-                                                    className={cn(
-                                                        "text-[9px] h-4 px-1 leading-none",
-                                                        p.recceStatus === 'PENDING' && "bg-yellow-500/10 text-yellow-600 border-yellow-200",
-                                                        p.recceStatus === 'IN_PROGRESS' && "bg-blue-500/10 text-blue-600 border-blue-200",
-                                                        p.recceStatus === 'COMPLETED' && "bg-green-500/10 text-green-600 border-green-200"
-                                                    )}
-                                                >
-                                                    {p.recceStatus}
-                                                </Badge>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className={cn(
-                                                        "h-6 w-6",
-                                                        selectedPremiseId === p.id ? "text-primary bg-primary/10" : "text-muted-foreground"
-                                                    )}
-                                                >
-                                                    <MapPin className="h-3.5 w-3.5" />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
+                    <CardContent>
+                        <div className="overflow-x-auto rounded-md border">
+                            <Table>
+                                <TableHeader className="bg-muted/50">
+                                    <TableRow>
+                                        <TableHead className="min-w-[200px]">Premise Name</TableHead>
+                                        <TableHead className="min-w-[200px]">Address</TableHead>
+                                        {isGlobal && <TableHead className="min-w-[150px]">Search</TableHead>}
+                                        <TableHead>Type</TableHead>
+                                        <TableHead>Nature</TableHead>
+                                        <TableHead className="min-w-[130px]">Occupant</TableHead>
+                                        <TableHead>Mobile</TableHead>
+                                        <TableHead>Recce</TableHead>
+                                        <TableHead>Decision</TableHead>
+                                        <TableHead>Resources</TableHead>
+                                        <TableHead className="min-w-[100px]">GPS</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {premises.map((p, i) => {
+                                        const officersNum = p.assignedResources.filter(r => r.resource.type === 'OFFICIAL').length
+                                        const witnessNum = p.assignedResources.filter(r => r.resource.type === 'WITNESS').length
+                                        const crpfNum = p.assignedResources.filter(r => r.resource.type === 'CRPF').length
+                                        const driverNum = p.assignedResources.filter(r => r.resource.type === 'DRIVER').length
+
+                                        return (
+                                            <TableRow key={p.id} className="hover:bg-muted/30">
+                                                <TableCell className="font-semibold">{p.name}</TableCell>
+                                                <TableCell className="text-sm text-muted-foreground">{p.address}</TableCell>
+                                                {isGlobal && (
+                                                    <TableCell>
+                                                        <Badge variant="outline" className="text-xs">{p.search?.name || 'N/A'}</Badge>
+                                                    </TableCell>
+                                                )}
+                                                <TableCell>
+                                                    <Badge variant="secondary" className="text-xs">{p.locationType}</Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant="outline" className="text-xs">{p.nature}</Badge>
+                                                </TableCell>
+                                                <TableCell className="text-sm">{p.occupantName || '—'}</TableCell>
+                                                <TableCell className="text-sm font-mono">{p.mobileNumber || '—'}</TableCell>
+                                                <TableCell>
+                                                    <Badge
+                                                        variant={p.recceStatus === 'COMPLETED' ? 'default' : 'outline'}
+                                                        className={cn(
+                                                            "text-xs",
+                                                            p.recceStatus === 'PENDING' && "bg-yellow-500/10 text-yellow-600 border-yellow-200",
+                                                            p.recceStatus === 'IN_PROGRESS' && "bg-blue-500/10 text-blue-600 border-blue-200",
+                                                            p.recceStatus === 'COMPLETED' && "bg-green-500/10 text-green-600 border-green-200"
+                                                        )}
+                                                    >
+                                                        {p.recceStatus}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge
+                                                        variant={p.decisionStatus === 'APPROVED' ? 'default' : 'outline'}
+                                                        className={cn(
+                                                            "text-xs",
+                                                            p.decisionStatus === 'PENDING' && "bg-yellow-500/10 text-yellow-600 border-yellow-200",
+                                                            p.decisionStatus === 'APPROVED' && "bg-green-500/10 text-green-600 border-green-200",
+                                                            p.decisionStatus === 'REJECTED' && "bg-red-500/10 text-red-600 border-red-200"
+                                                        )}
+                                                    >
+                                                        {p.decisionStatus}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-col gap-0.5 text-xs">
+                                                        {officersNum > 0 && <span>👮 {officersNum} Officers</span>}
+                                                        {witnessNum > 0 && <span>👁️ {witnessNum} Witness</span>}
+                                                        {crpfNum > 0 && <span>🛡️ {crpfNum} CRPF</span>}
+                                                        {driverNum > 0 && <span>🚗 {driverNum} Driver</span>}
+                                                        {p.assignedResources.length === 0 && <span className="text-muted-foreground">None</span>}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="font-mono text-xs">
+                                                    {p.gpsLat && p.gpsLong
+                                                        ? `${p.gpsLat.toFixed(4)}, ${p.gpsLong.toFixed(4)}`
+                                                        : '—'}
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <Button variant="ghost" size="sm" asChild>
+                                                        <Link href={`/dashboard/operations/premises/${p.id}`}>
+                                                            View
+                                                        </Link>
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })}
+                                </TableBody>
+                            </Table>
+                        </div>
                     </CardContent>
                 </Card>
-            </div>
+            )}
         </div>
     )
 }
+

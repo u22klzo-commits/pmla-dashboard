@@ -67,6 +67,7 @@ export class PremiseService {
         distanceFromCrpfCamp?: number,
         liveLocationUrl1?: string,
         liveLocationUrl2?: string,
+        photoUrl?: string,
         recceNotes?: string
     }): Promise<ServiceResult<Premise>> {
         try {
@@ -85,6 +86,7 @@ export class PremiseService {
                     distanceFromCrpfCamp: data.distanceFromCrpfCamp,
                     liveLocationUrl1: data.liveLocationUrl1,
                     liveLocationUrl2: data.liveLocationUrl2,
+                    photoUrl: data.photoUrl,
                     recceNotes: data.recceNotes,
                     recceStatus: 'PENDING',
                     decisionStatus: 'PENDING',
@@ -112,6 +114,7 @@ export class PremiseService {
             distanceFromCrpfCamp?: number
             liveLocationUrl1?: string
             liveLocationUrl2?: string
+            photoUrl?: string
             recceNotes?: string
         }
     ): Promise<ServiceResult<Premise>> {
@@ -131,6 +134,7 @@ export class PremiseService {
                     distanceFromCrpfCamp: data.distanceFromCrpfCamp,
                     liveLocationUrl1: data.liveLocationUrl1,
                     liveLocationUrl2: data.liveLocationUrl2,
+                    photoUrl: data.photoUrl,
                     recceNotes: data.recceNotes,
                 }
             })

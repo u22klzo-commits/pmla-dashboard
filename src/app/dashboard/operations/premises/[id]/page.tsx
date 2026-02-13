@@ -134,7 +134,7 @@ export default async function PremiseDetailsPage({ params }: PremiseDetailsPageP
                                 <p className="text-sm">{premise.distanceFromCrpfCamp ? `${premise.distanceFromCrpfCamp} km` : 'N/A'}</p>
                             </div>
                         </div>
-                        {(premise.liveLocationUrl1 || premise.liveLocationUrl2) && (
+                        {(premise.liveLocationUrl1 || premise.liveLocationUrl2 || premise.photoUrl) && (
                             <div className="space-y-2 pt-2 border-t">
                                 {premise.liveLocationUrl1 && (
                                     <a href={premise.liveLocationUrl1} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
@@ -146,6 +146,12 @@ export default async function PremiseDetailsPage({ params }: PremiseDetailsPageP
                                     <a href={premise.liveLocationUrl2} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
                                         <Navigation className="h-4 w-4" />
                                         Open in Maps (Link 2)
+                                    </a>
+                                )}
+                                {premise.photoUrl && (
+                                    <a href={premise.photoUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
+                                        <FileText className="h-4 w-4" />
+                                        View Premise Photo
                                     </a>
                                 )}
                             </div>

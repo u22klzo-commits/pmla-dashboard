@@ -36,6 +36,7 @@ export default async function PremiseMasterPage() {
         gpsLong: p.gpsLong,
         liveLocationUrl1: p.liveLocationUrl1,
         liveLocationUrl2: p.liveLocationUrl2,
+        photoUrl: p.photoUrl,
     }))
 
     return (
