@@ -2,6 +2,12 @@ import { prisma } from "@/lib/prisma"
 import { Search, Case, Premise, ResourceAllocation, Resource } from "@prisma/client"
 import { ServiceResult } from "./types"
 import { handlePrismaError } from "./error-handler"
+import { cookies } from "next/headers"
+
+export async function getSelectedSearchId() {
+    const cookieStore = await cookies()
+    return cookieStore.get("selectedSearchId")?.value
+}
 
 export type SearchWithCase = Search & {
     case: {

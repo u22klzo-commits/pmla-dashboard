@@ -24,7 +24,8 @@ import {
     LogOut,
     Car,
     ClipboardList,
-    ShieldAlert
+    ShieldAlert,
+    BarChart
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -70,6 +71,15 @@ export function Sidebar({ className, isCollapsed, setIsCollapsed }: SidebarProps
                 { href: "/dashboard/resources/witnesses", label: "Public Support", icon: Users },
                 { href: "/dashboard/resources/drivers", label: "Logistics", icon: Car },
                 { href: "/dashboard/resources/crpf", label: "Security Units", icon: ShieldAlert },
+            ]
+        },
+        {
+            group: "Reports",
+            items: [
+                { href: "/dashboard/reports/console", label: "Console", icon: BarChart },
+                { href: "/dashboard/reports/officer-list", label: "Officer List", icon: Users },
+                { href: "/dashboard/reports/senior", label: "Senior Report", icon: FileText },
+                { href: "/dashboard/reports/team-sheets", label: "Team Sheets", icon: ClipboardList },
             ]
         },
     ]

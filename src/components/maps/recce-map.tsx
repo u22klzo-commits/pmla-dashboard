@@ -88,6 +88,17 @@ function MapEvents({ onMapClick }: { onMapClick: (lat: number, lng: number) => v
     return null
 }
 
+function MapResizer({ isOpen }: { isOpen: boolean }) {
+    const map = useMap()
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            map.invalidateSize()
+        }, 300)
+        return () => clearTimeout(timer)
+    }, [isOpen, map])
+    return null
+}
+
 const getSafeCoord = (val: any, base: number, id: string, offsetIdx: number) => {
     if (typeof val === 'number' && !isNaN(val) && val !== 0) return val;
 
@@ -144,15 +155,13 @@ export default function RecceMap({
     const [center, setCenter] = useState<[number, number]>(hqLocation)
     const [routePath, setRoutePath] = useState<[number, number][]>([])
     const [routeStats, setRouteStats] = useState<{ distance: string, duration: string } | null>(null)
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true)
 
     // Route Building State
     const [routePoints, setRoutePoints] = useState<RoutePoint[]>([])
 
     // Custom markers state
     const [customMarkers, setCustomMarkers] = useState<CustomMarker[]>([])
-
-
-
 
     useEffect(() => {
         setIsMounted(true)
@@ -175,6 +184,7 @@ export default function RecceMap({
             color: marker.color
         }
         setRoutePoints(prev => [...prev, newPoint])
+        if (!isSidebarOpen) setIsSidebarOpen(true)
     }
 
     const handleLocationSelect = (loc: LocationResult) => {
@@ -253,17 +263,27 @@ export default function RecceMap({
 
     return (
         <div
-            className={cn("flex flex-col md:flex-row w-full rounded-md overflow-hidden border shadow-lg bg-background font-sans", className)}
+            className={cn("flex flex-col md:flex-row w-full rounded-md overflow-hidden border shadow-lg bg-background font-sans relative", className)}
             style={{ height }}
         >
             {/* Map Area */}
-            <div className="flex-1 relative min-h-[300px]">
+            <div className="flex-1 relative min-h-[300px] transition-all duration-300">
                 <div className="absolute bottom-4 left-4 z-[1000] pointer-events-none">
                     <div className="bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-full border shadow-sm flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
                         <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Search or Drop Pins</span>
                     </div>
                 </div>
+
+                {/* Toggle Button */}
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className="absolute top-4 right-4 z-[1000] bg-background/90 backdrop-blur-sm shadow-md border-primary/20 hover:bg-background h-8 px-2 text-xs font-medium"
+                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                >
+                    {isSidebarOpen ? "Hide Panel" : "Show Panel"}
+                </Button>
 
                 <MapContainer
                     center={center}
@@ -273,6 +293,7 @@ export default function RecceMap({
                     scrollWheelZoom={true}
                 >
                     <ChangeView center={center} />
+                    <MapResizer isOpen={isSidebarOpen} />
                     <TileLayer
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -412,8 +433,11 @@ export default function RecceMap({
             </div>
 
             {/* Control Sidebar */}
-            <div className="w-full md:w-96 border-t md:border-t-0 md:border-l bg-background/50 backdrop-blur-sm z-10 flex flex-col p-4 gap-6 overflow-y-auto box-border">
-                <div className="space-y-2">
+            <div className={cn(
+                "border-t md:border-t-0 md:border-l bg-background/50 backdrop-blur-sm z-10 flex flex-col gap-6 overflow-y-auto box-border transition-all duration-300",
+                isSidebarOpen ? "w-full md:w-96 p-4 opacity-100" : "w-0 p-0 opacity-0 overflow-hidden border-none"
+            )}>
+                <div className="space-y-2 min-w-[300px]">
                     <h4 className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground px-1">Location Intelligence</h4>
                     <MapSearchOverlay
                         onLocationSelect={handleLocationSelect}
@@ -421,7 +445,7 @@ export default function RecceMap({
                     />
                 </div>
 
-                <div className="flex-1 space-y-2">
+                <div className="flex-1 space-y-2 min-w-[300px]">
                     <h4 className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground px-1">Route Planning</h4>
                     <div className={cn("transition-all duration-300", routePoints.length > 0 ? "translate-y-0 opacity-100" : "translate-y-4 opacity-50")}>
                         <RouteBuilderPanel

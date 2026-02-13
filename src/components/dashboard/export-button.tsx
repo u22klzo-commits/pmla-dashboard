@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
 
 interface ExportButtonProps {
-    type?: 'global' | 'search' | 'audit' | 'auto';
+    type?: 'global' | 'search' | 'audit' | 'auto' | 'premises';
     searchId?: string;
     variant?: 'outline' | 'ghost' | 'default';
     size?: 'default' | 'sm' | 'lg' | 'icon';
@@ -43,13 +43,12 @@ export function ExportButton({
             let exportType = type;
 
             // Auto-detect type based on pathname if set to 'auto'
+            // We prioritized exact matches for reports
             if (exportType === 'auto') {
                 if (pathname.includes('/operations/requisition')) {
                     if (searchId) {
                         result = await exportRequisitionReport(searchId);
                     } else {
-                        // Try to get searchId from cookies or context if not passed
-                        // But for now, if no searchId is passed, maybe fallback to global or show error
                         toast({
                             title: "Search Required",
                             description: "Please select a search to export requisitions.",
@@ -58,7 +57,7 @@ export function ExportButton({
                         setLoading(false);
                         return;
                     }
-                } else if (pathname.includes('/resources/officers')) {
+                } else if (pathname.includes('/resources/officers') || pathname.includes('/reports/officer-list')) {
                     result = await exportResourceReport('OFFICIAL', searchId);
                 } else if (pathname.includes('/resources/witnesses')) {
                     result = await exportResourceReport('WITNESS', searchId);
@@ -66,8 +65,16 @@ export function ExportButton({
                     result = await exportResourceReport('CRPF', searchId);
                 } else if (pathname.includes('/resources/drivers')) {
                     result = await exportResourceReport('DRIVER', searchId);
-                } else if (pathname.includes('/operations/premises')) {
+                } else if (pathname.includes('/operations/premises') || pathname.includes('/reports/console') || pathname.includes('/reports/team-sheets')) {
+                    // console and team-sheets are premise-centric
                     result = await exportPremisesReport(searchId);
+                } else if (pathname.includes('/reports/senior')) {
+                    if (searchId) {
+                        result = await exportSearchReport(searchId);
+                    } else {
+                        // Fallback for global view on senior report if needed, or just premises
+                        result = await exportPremisesReport(searchId);
+                    }
                 } else if (pathname === '/dashboard' || pathname === '/dashboard/') {
                     if (searchId) {
                         result = await exportSearchReport(searchId);
@@ -85,7 +92,19 @@ export function ExportButton({
                     result = await exportSearchReport(searchId);
                 } else if (exportType === 'audit') {
                     result = await exportAuditLogs();
+                } else if (exportType === 'premises') {
+                    result = await exportPremisesReport(searchId);
                 } else {
+                    // Fallback for manual types not explicitly handled above if any
+                    if (exportType === 'search' && !searchId) {
+                        toast({
+                            title: "Error",
+                            description: "Search ID is missing for this export.",
+                            variant: "destructive"
+                        });
+                        setLoading(false);
+                        return;
+                    }
                     throw new Error('Invalid export configuration');
                 }
             }
