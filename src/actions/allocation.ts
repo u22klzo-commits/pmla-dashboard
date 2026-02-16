@@ -15,7 +15,7 @@ interface Requirements {
 
 export async function autoAllocateResources(searchId: string) {
     try {
-        const auth = await requireRole(['ADMIN', 'COMMANDER']) // Review: Should OFFICERs be allowed? Usually Commanders plan.
+        const auth = await requireRole(['ADMIN', 'OFFICER']) // Review: Should OFFICERs be allowed? Usually Commanders plan.
         if (!auth.success) return { success: false, error: auth.error }
 
         // 1. Fetch Approved Premises for this Search

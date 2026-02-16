@@ -751,7 +751,7 @@ export default function ProfilePage() {
                                                             </SelectTrigger>
                                                             <SelectContent>
                                                                 <SelectItem value="ADMIN">ADMIN</SelectItem>
-                                                                <SelectItem value="COMMANDER">COMMANDER</SelectItem>
+
                                                                 <SelectItem value="OFFICER">OFFICER</SelectItem>
                                                                 <SelectItem value="VIEWER">VIEWER</SelectItem>
                                                             </SelectContent>
@@ -868,7 +868,7 @@ export default function ProfilePage() {
                                                             </SelectTrigger>
                                                             <SelectContent>
                                                                 <SelectItem value="ADMIN">ADMIN</SelectItem>
-                                                                <SelectItem value="COMMANDER">COMMANDER</SelectItem>
+
                                                                 <SelectItem value="OFFICER">OFFICER</SelectItem>
                                                                 <SelectItem value="VIEWER">VIEWER</SelectItem>
                                                             </SelectContent>

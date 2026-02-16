@@ -137,7 +137,6 @@ model FieldConfig {
 
 enum Role {
   ADMIN
-  COMMANDER
   OFFICER
   VIEWER
 }

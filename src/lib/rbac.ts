@@ -141,7 +141,7 @@ export function getCasePermissions(
         return {
             canEdit: true,
             canDelete: false, // Collaborators cannot delete cases
-            canManageCollaborators: false, // Collaborators cannot manage other collaborators
+            canManageCollaborators: true, // Collaborators can now manage other collaborators
         };
     }
 

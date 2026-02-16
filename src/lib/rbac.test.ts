@@ -12,17 +12,17 @@ function runTests() {
             params: { role: 'ADMIN' as Role, userId: 'admin-1', ownerId: 'user-2', collaboratorIds: [] },
             expected: { canEdit: true, canDelete: true, canManageCollaborators: true }
         },
-        // 2. Owner - Should have all permissions
+        // 2. Owner (Officer) - Should have all permissions
         {
             name: "Owner Access",
             params: { role: 'OFFICER' as Role, userId: 'owner-1', ownerId: 'owner-1', collaboratorIds: [] },
             expected: { canEdit: true, canDelete: true, canManageCollaborators: true }
         },
-        // 3. Collaborator - Should have Edit, NO Delete, NO Manage
+        // 3. Collaborator (Officer) - Should have Edit, NO Delete, NO Manage
         {
             name: "Collaborator Access",
             params: { role: 'OFFICER' as Role, userId: 'collab-1', ownerId: 'owner-1', collaboratorIds: ['collab-1'] },
-            expected: { canEdit: true, canDelete: false, canManageCollaborators: false }
+            expected: { canEdit: true, canDelete: false, canManageCollaborators: true }
         },
         // 4. Viewer (Collaborator) - Should have NO Write/Delete/Manage even if collaborator
         {

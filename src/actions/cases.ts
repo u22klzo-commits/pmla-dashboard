@@ -30,7 +30,7 @@ export async function getCases() {
                     select: { searches: true }
                 },
                 owner: { select: { id: true, name: true, username: true, email: true } },
-                collaborators: { select: { id: true, name: true, username: true } }
+                collaborators: { select: { id: true, name: true, username: true, email: true, role: true } }
             }
         })
         return cases
@@ -43,7 +43,7 @@ export async function getCases() {
 export async function createCase(data: { caseNumber: string; title: string; description?: string }) {
     try {
         // Restrict creation to non-VIEWER roles
-        const auth = await requireRole(['ADMIN', 'COMMANDER', 'OFFICER'])
+        const auth = await requireRole(['ADMIN', 'OFFICER'])
         if (!auth.success) return { success: false, error: auth.error }
 
         const validatedFields = caseCreateSchema.safeParse(data)
@@ -180,11 +180,9 @@ export async function assignCaseOwner(caseId: string, newOwnerId: string) {
 
 export async function addCaseCollaborator(caseId: string, userId: string) {
     try {
-        // Only Owner or Admin can manage collaborators.
-        // requireCaseAccess(id, 'DELETE') enforces Owner or Admin. 
-        // So we can reuse 'DELETE' permission check effectively for Management rights.
-        const access = await requireCaseAccess(caseId, 'DELETE')
-        if (!access.success) return { success: false, error: "Unauthorized: Only owner or admin can add collaborators" }
+        // Owner, Admin, and Collaborators can manage collaborators.
+        const access = await requireCaseAccess(caseId, 'WRITE')
+        if (!access.success) return { success: false, error: "Unauthorized: You do not have permission to manage collaborators" }
 
         await prisma.case.update({
             where: { id: caseId },
@@ -205,8 +203,8 @@ export async function addCaseCollaborator(caseId: string, userId: string) {
 
 export async function removeCaseCollaborator(caseId: string, userId: string) {
     try {
-        const access = await requireCaseAccess(caseId, 'DELETE')
-        if (!access.success) return { success: false, error: "Unauthorized: Only owner or admin can remove collaborators" }
+        const access = await requireCaseAccess(caseId, 'WRITE')
+        if (!access.success) return { success: false, error: "Unauthorized: You do not have permission to manage collaborators" }
 
         await prisma.case.update({
             where: { id: caseId },

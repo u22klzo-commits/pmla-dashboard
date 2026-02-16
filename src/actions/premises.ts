@@ -14,7 +14,7 @@ export async function getPremises(searchId: string) {
     // If searchId is "global-view" or empty, fetch all premises
     // Restricted to ADMIN and COMMANDER
     if (!searchId || searchId === 'global-view') {
-        const roleCheck = await requireRole(['ADMIN', 'COMMANDER'])
+        const roleCheck = await requireRole(['ADMIN', 'OFFICER'])
         if (!roleCheck.success) return []
 
         const result = await getAllPremises()
@@ -41,7 +41,7 @@ export async function getAllPremises(searchId?: string) {
 
     // If fetching all premises (no specific search context), restrict to high-level roles
     if (!searchId) {
-        const roleCheck = await requireRole(['ADMIN', 'COMMANDER'])
+        const roleCheck = await requireRole(['ADMIN', 'OFFICER'])
         if (!roleCheck.success) return []
     }
 
@@ -205,7 +205,7 @@ export async function getRecceData(searchId?: string | null) {
     const isGlobal = !searchId || searchId === 'global-view'
 
     if (isGlobal) {
-        const roleCheck = await requireRole(['ADMIN', 'COMMANDER'])
+        const roleCheck = await requireRole(['ADMIN', 'OFFICER'])
         if (!roleCheck.success) return { premises: [], search: null, isGlobal: true }
     }
 

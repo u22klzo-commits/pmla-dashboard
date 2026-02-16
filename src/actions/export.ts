@@ -10,7 +10,7 @@ export async function exportGlobalReport() {
         const session = await getServerSession(authOptions);
         if (!session) return { success: false, error: 'Unauthorized' };
 
-        const roleCheck = await requireRole(['ADMIN', 'COMMANDER']);
+        const roleCheck = await requireRole(['ADMIN', 'OFFICER']);
         if (!roleCheck.success) return { success: false, error: roleCheck.error };
 
         const searches = await prisma.search.findMany({
@@ -106,7 +106,7 @@ export async function exportAuditLogs() {
         const session = await getServerSession(authOptions);
         if (!session) return { success: false, error: 'Unauthorized' };
 
-        const roleCheck = await requireRole(['ADMIN', 'COMMANDER']);
+        const roleCheck = await requireRole(['ADMIN', 'OFFICER']);
         if (!roleCheck.success) return { success: false, error: roleCheck.error };
 
         // Since we don't have an AuditLog table, we'll export a summary of recent data additions
@@ -200,7 +200,7 @@ export async function exportResourceReport(type: 'OFFICIAL' | 'WITNESS' | 'CRPF'
             const access = await requireCaseAccess(search.caseId, 'READ');
             if (!access.success) return { success: false, error: access.error };
         } else {
-            const roleCheck = await requireRole(['ADMIN', 'COMMANDER']);
+            const roleCheck = await requireRole(['ADMIN', 'OFFICER']);
             if (!roleCheck.success) return { success: false, error: roleCheck.error };
         }
 
@@ -265,7 +265,7 @@ export async function exportPremisesReport(searchId?: string) {
             const access = await requireCaseAccess(search.caseId, 'READ');
             if (!access.success) return { success: false, error: access.error };
         } else {
-            const roleCheck = await requireRole(['ADMIN', 'COMMANDER']);
+            const roleCheck = await requireRole(['ADMIN', 'OFFICER']);
             if (!roleCheck.success) return { success: false, error: roleCheck.error };
         }
 
@@ -314,7 +314,7 @@ export async function getAuditLogs() {
         const session = await getServerSession(authOptions);
         if (!session) return { success: false, error: 'Unauthorized' };
 
-        const roleCheck = await requireRole(['ADMIN', 'COMMANDER']);
+        const roleCheck = await requireRole(['ADMIN', 'OFFICER']);
         if (!roleCheck.success) return { success: false, error: roleCheck.error };
 
         // Surrogate audit logs based on recent database events

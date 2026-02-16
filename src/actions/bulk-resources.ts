@@ -19,7 +19,7 @@ export async function bulkImportResources(type: ResourceType, data: any[], searc
     }
 
     try {
-        const auth = await requireRole(['ADMIN', 'COMMANDER', 'OFFICER'])
+        const auth = await requireRole(['ADMIN', 'OFFICER'])
         if (!auth.success) return { success: false, error: auth.error }
 
         const resourcesToCreate = data.map(item => {

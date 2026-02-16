@@ -22,7 +22,7 @@ export async function getResourceById(id: string) {
 }
 
 export async function allocateResource(premiseId: string, resourceId: string) {
-    const auth = await requireRole(['ADMIN', 'COMMANDER', 'OFFICER'])
+    const auth = await requireRole(['ADMIN', 'OFFICER'])
     if (!auth.success) return { success: false, error: auth.error }
 
     const result = await resourceService.allocateResource(premiseId, resourceId)
@@ -38,7 +38,7 @@ export async function allocateResource(premiseId: string, resourceId: string) {
 }
 
 export async function deallocateResource(allocationId: string, resourceId: string, searchId: string) {
-    const auth = await requireRole(['ADMIN', 'COMMANDER', 'OFFICER'])
+    const auth = await requireRole(['ADMIN', 'OFFICER'])
     if (!auth.success) return { success: false, error: auth.error }
 
     const result = await resourceService.deallocateResource(allocationId, resourceId)
@@ -55,7 +55,7 @@ export async function validateTeamComposition(premiseId: string) {
 }
 
 export async function createResource(data: any) {
-    const auth = await requireRole(['ADMIN', 'COMMANDER', 'OFFICER'])
+    const auth = await requireRole(['ADMIN', 'OFFICER'])
     if (!auth.success) return { success: false, error: auth.error }
 
     const validatedFields = resourceCreateSchema.safeParse(data)
@@ -71,7 +71,7 @@ export async function createResource(data: any) {
 }
 
 export async function deleteResource(resourceId: string) {
-    const auth = await requireRole(['ADMIN', 'COMMANDER']) // Deletion usually more restricted
+    const auth = await requireRole(['ADMIN', 'OFFICER']) // Deletion usually more restricted
     if (!auth.success) return { success: false, error: auth.error }
 
     const result = await resourceService.deleteResource(resourceId)
@@ -82,7 +82,7 @@ export async function deleteResource(resourceId: string) {
 }
 
 export async function updateResource(resourceId: string, data: any) {
-    const auth = await requireRole(['ADMIN', 'COMMANDER', 'OFFICER'])
+    const auth = await requireRole(['ADMIN', 'OFFICER'])
     if (!auth.success) return { success: false, error: auth.error }
 
     const validatedFields = resourceUpdateSchema.safeParse(data)
@@ -103,7 +103,7 @@ export async function syncResourceAllocations(
     addedResourceIds: string[],
     removedResourceIds: string[]
 ) {
-    const auth = await requireRole(['ADMIN', 'COMMANDER', 'OFFICER'])
+    const auth = await requireRole(['ADMIN', 'OFFICER'])
     if (!auth.success) return { success: false, error: auth.error }
 
     const result = await resourceService.syncAllocations(premiseId, addedResourceIds, removedResourceIds)
@@ -114,14 +114,14 @@ export async function syncResourceAllocations(
 }
 
 export async function suggestResourceAllocation(premiseId: string) {
-    const auth = await requireRole(['ADMIN', 'COMMANDER', 'OFFICER'])
+    const auth = await requireRole(['ADMIN', 'OFFICER'])
     if (!auth.success) return { success: false, error: auth.error }
 
     return await AllocationService.suggestAllocation(premiseId)
 }
 
 export async function autoAssignAllPremises() {
-    const auth = await requireRole(['ADMIN', 'COMMANDER']) // Higher privilege
+    const auth = await requireRole(['ADMIN', 'OFFICER']) // Higher privilege
     if (!auth.success) return { success: false, error: auth.error }
 
     const result = await AllocationService.autoAssignAllPremises()
