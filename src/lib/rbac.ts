@@ -4,7 +4,7 @@ import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export type AuthResult<T = void> =
-    | { success: true; data?: T; session: any } // session is typed loosely here to avoid circular dep issues, but it's the NextAuth session
+    | { success: true; data?: T; session: any; isOwner?: boolean; isAdmin?: boolean } // session is typed loosely here to avoid circular dep issues, but it's the NextAuth session
     | { success: false; error: string };
 
 /**
@@ -17,7 +17,7 @@ export async function requireAuth(): Promise<AuthResult> {
         return { success: false, error: "Unauthorized: Please log in." };
     }
 
-    return { success: true, session };
+    return { success: true, session, isAdmin: session.user.role === 'ADMIN' };
 }
 
 /**
@@ -49,7 +49,9 @@ export async function requireCaseAccess(caseId: string, type: 'READ' | 'WRITE' |
     const { id: userId, role } = auth.session.user;
 
     // Admins can do anything
-    if (role === 'ADMIN') return auth;
+    if (role === 'ADMIN') {
+        return { ...auth, isOwner: false, isAdmin: true }; // Admin is not "owner" per se, but has full access
+    }
 
     const caseItem = await prisma.case.findUnique({
         where: { id: caseId },
@@ -63,17 +65,90 @@ export async function requireCaseAccess(caseId: string, type: 'READ' | 'WRITE' |
     const isOwner = caseItem.ownerId === userId;
     const isCollaborator = caseItem.collaborators.some(c => c.id === userId);
 
+    if (role === 'VIEWER') {
+        if (type !== 'READ') {
+            return { success: false, error: "Forbidden: Viewers have read-only access." };
+        }
+        // Viewers can only READ if they are owner (unlikely) or collaborator
+        if (!isOwner && !isCollaborator) {
+            return { success: false, error: "Forbidden: You do not have permission to view this case." };
+        }
+        return { ...auth, isOwner, isAdmin: false };
+    }
+
     if (type === 'DELETE') {
         // Only Owner (or Admin, checked above) can delete
         if (!isOwner) return { success: false, error: "Forbidden: Only the case owner can delete this case." };
     } else if (type === 'WRITE') {
         // Owner or Collaborator can edit
-        // (Assuming collaborators have write access - need to confirm this business logic, but standard pattern usually allows it)
         if (!isOwner && !isCollaborator) return { success: false, error: "Forbidden: You do not have permission to edit this case." };
     } else {
         // READ
         if (!isOwner && !isCollaborator) return { success: false, error: "Forbidden: You do not have permission to view this case." };
     }
 
-    return auth;
+    return { ...auth, isOwner, isAdmin: false };
+}
+
+/**
+ * Calculates UI permissions for a case based on user role and relationship to the case.
+ * This is a synchronous helper for UI/client-side checks where data is already available.
+ * 
+ * @param role - The user's role
+ * @param userId - The user's ID
+ * @param ownerId - The case owner's ID
+ * @param collaboratorIds - The IDs of collaborators on the case
+ */
+export function getCasePermissions(
+    role: Role,
+    userId: string,
+    ownerId: string | null,
+    collaboratorIds: string[]
+) {
+    const isOwner = userId === ownerId;
+    const isCollaborator = collaboratorIds.includes(userId);
+    const isAdmin = role === 'ADMIN';
+
+    // Viewer permissions are very restricted
+    if (role === 'VIEWER') {
+        return {
+            canEdit: false,
+            canDelete: false,
+            canManageCollaborators: false, // Viewers cannot manage collaborators
+        };
+    }
+
+    // Admin permissions
+    if (isAdmin) {
+        return {
+            canEdit: true,
+            canDelete: true,
+            canManageCollaborators: true,
+        };
+    }
+
+    // Owner permissions
+    if (isOwner) {
+        return {
+            canEdit: true,
+            canDelete: true,
+            canManageCollaborators: true,
+        };
+    }
+
+    // Collaborator permissions (Commanders/Officers only, since Viewers are handled above)
+    if (isCollaborator) {
+        return {
+            canEdit: true,
+            canDelete: false, // Collaborators cannot delete cases
+            canManageCollaborators: false, // Collaborators cannot manage other collaborators
+        };
+    }
+
+    // Default: No permissions
+    return {
+        canEdit: false,
+        canDelete: false,
+        canManageCollaborators: false,
+    };
 }

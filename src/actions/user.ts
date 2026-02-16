@@ -270,7 +270,52 @@ export async function deleteUser(userId: string) {
 
         return { success: true }
     } catch (error) {
-        console.error("Failed to delete user:", error)
+        return { success: false, error: "Internal server error" }
+    }
+}
+
+export async function searchUsers(query: string) {
+    try {
+        const session = await getServerSession(authOptions)
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" }
+        }
+
+        if (session.user.role === 'VIEWER') {
+            return { success: true, data: [] }
+        }
+
+        if (!query || query.length < 2) {
+            return { success: true, data: [] }
+        }
+
+        const users = await prisma.user.findMany({
+            where: {
+                AND: [
+                    {
+                        OR: [
+                            { name: { contains: query, mode: 'insensitive' } },
+                            { email: { contains: query, mode: 'insensitive' } },
+                            { username: { contains: query, mode: 'insensitive' } }
+                        ]
+                    },
+                    { id: { not: session.user.id } }, // Exclude self
+                    { isApproved: true } // Only approved users
+                ]
+            },
+            take: 10,
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                username: true,
+                role: true
+            }
+        })
+
+        return { success: true, data: users }
+    } catch (error) {
+        console.error("Failed to search users:", error)
         return { success: false, error: "Internal server error" }
     }
 }

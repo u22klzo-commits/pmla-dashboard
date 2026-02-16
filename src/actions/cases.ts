@@ -10,14 +10,20 @@ export async function getCases() {
         const auth = await requireAuth()
         if (!auth.success) return []
 
+        const { id: userId, role } = auth.session.user
         const where: any = {}
-        // Viewers/Officers see assigned cases? or all? 
-        // Current logic was "all cases". Let's restrict if needed, but for now let's keep it open to authenticated users 
-        // to match original behavior, but wrapped in try/catch and auth check.
-        // Actually, original behavior was `prisma.case.findMany` with no where clause, so all cases. 
-        // But we should at least require login.
+
+        // Admin and Commanders see all cases? Or just Admins? 
+        // Let's say Admin see all. Commanders/Officers/Viewers see only assigned/owned.
+        if (role !== 'ADMIN') {
+            where.OR = [
+                { ownerId: userId },
+                { collaborators: { some: { id: userId } } }
+            ]
+        }
 
         const cases = await prisma.case.findMany({
+            where,
             orderBy: { updatedAt: 'desc' },
             include: {
                 _count: {
@@ -36,7 +42,8 @@ export async function getCases() {
 
 export async function createCase(data: { caseNumber: string; title: string; description?: string }) {
     try {
-        const auth = await requireAuth()
+        // Restrict creation to non-VIEWER roles
+        const auth = await requireRole(['ADMIN', 'COMMANDER', 'OFFICER'])
         if (!auth.success) return { success: false, error: auth.error }
 
         const validatedFields = caseCreateSchema.safeParse(data)
@@ -49,10 +56,11 @@ export async function createCase(data: { caseNumber: string; title: string; desc
                 caseNumber: validatedFields.data.caseNumber,
                 title: validatedFields.data.title,
                 description: validatedFields.data.description,
-                status: 'ACTIVE', // Changed default to ACTIVE matching schema default if applicable, or explicit
+                status: 'ACTIVE',
                 ownerId: auth.session.user.id
             }
         })
+
         revalidatePath('/dashboard/cases')
         return { success: true, data: newCase }
     } catch (error) {
@@ -80,7 +88,7 @@ export async function updateCaseStatus(id: string, status: string) {
 
 export async function getCaseById(id: string) {
     try {
-        const auth = await requireAuth()
+        const auth = await requireCaseAccess(id, 'READ')
         if (!auth.success) return null
 
         const caseItem = await prisma.case.findUnique({
@@ -101,10 +109,6 @@ export async function getCaseById(id: string) {
                 collaborators: { select: { id: true, name: true, username: true, email: true, role: true } }
             }
         })
-
-        // Optional: Check if user has access to view this specific case?
-        // For now, allowing all authenticated users to view details if they have the ID, 
-        // consistent with getCases() "public for auth users" logic.
 
         return caseItem
     } catch (error) {

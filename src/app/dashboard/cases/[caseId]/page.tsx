@@ -7,14 +7,30 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { getCaseById } from "@/actions/cases"
 import { RegisterSearchDialog } from "@/components/searches/register-search-dialog"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { getCasePermissions } from "@/lib/rbac"
+import { Role } from "@prisma/client"
+import { ManageCollaboratorsDialog } from "@/components/cases/manage-collaborators-dialog"
 
 export default async function CasePage({ params }: { params: Promise<{ caseId: string }> }) {
     const { caseId } = await params
     const caseItem = await getCaseById(caseId)
+    const session = await getServerSession(authOptions)
 
-    if (!caseItem) {
+    if (!caseItem || !session?.user) {
         notFound()
     }
+
+    const user = session.user
+
+    // Permission checks
+    const { canEdit, canManageCollaborators } = getCasePermissions(
+        user.role as Role,
+        user.id,
+        caseItem.ownerId,
+        caseItem.collaborators.map((c: any) => c.id)
+    )
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
@@ -34,12 +50,20 @@ export default async function CasePage({ params }: { params: Promise<{ caseId: s
                     </p>
                 </div>
                 <div className="flex items-center space-x-2">
-                    <Link href={`/dashboard/cases/${caseItem.id}/edit`}>
-                        <Button>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit Case
-                        </Button>
-                    </Link>
+                    {canManageCollaborators && (
+                        <ManageCollaboratorsDialog
+                            caseId={caseItem.id}
+                            collaborators={caseItem.collaborators as any}
+                        />
+                    )}
+                    {canEdit && (
+                        <Link href={`/dashboard/cases/${caseItem.id}/edit`}>
+                            <Button>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit Case
+                            </Button>
+                        </Link>
+                    )}
                 </div>
             </div>
 
