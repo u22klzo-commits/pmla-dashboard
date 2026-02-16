@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { ResourceType, Gender, ResourceStatus } from "@prisma/client"
+import { requireRole } from "@/lib/rbac"
 
 interface Requirements {
     maleWitness?: number
@@ -14,6 +15,9 @@ interface Requirements {
 
 export async function autoAllocateResources(searchId: string) {
     try {
+        const auth = await requireRole(['ADMIN', 'COMMANDER']) // Review: Should OFFICERs be allowed? Usually Commanders plan.
+        if (!auth.success) return { success: false, error: auth.error }
+
         // 1. Fetch Approved Premises for this Search
         const premises = await prisma.premise.findMany({
             where: {

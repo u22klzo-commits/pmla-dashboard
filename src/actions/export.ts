@@ -3,11 +3,15 @@
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { requireRole, requireCaseAccess } from '@/lib/rbac';
 
 export async function exportGlobalReport() {
     try {
         const session = await getServerSession(authOptions);
         if (!session) return { success: false, error: 'Unauthorized' };
+
+        const roleCheck = await requireRole(['ADMIN', 'COMMANDER']);
+        if (!roleCheck.success) return { success: false, error: roleCheck.error };
 
         const searches = await prisma.search.findMany({
             include: {
@@ -24,9 +28,9 @@ export async function exportGlobalReport() {
 
         searches.forEach((s: any) => {
             const row = [
-                `"${s.name}"`,
-                `"${s.case.caseNumber}"`,
-                `"${s.status}"`,
+                formatCsvField(s.name),
+                formatCsvField(s.case.caseNumber),
+                formatCsvField(s.status),
                 s.date ? s.date.toLocaleDateString() : '',
                 s._count.premises,
                 s._count.resources
@@ -61,10 +65,15 @@ export async function exportSearchReport(searchId: string) {
 
         if (!search) return { success: false, error: 'Search not found' };
 
+        const access = await requireCaseAccess(search.caseId, 'READ');
+        if (!access.success) return { success: false, error: access.error };
+
+
+
         const sections = [];
 
         // Header info
-        sections.push(`Search Report: ${search.name}`);
+        sections.push(`Search Report: ${search.name}`); // Intentionally kept simple text, not CSV row
         sections.push(`Case: ${search.case.caseNumber} - ${search.case.title}`);
         sections.push(`Date: ${search.date.toLocaleDateString()}`);
         sections.push(`Status: ${search.status}`);
@@ -74,7 +83,7 @@ export async function exportSearchReport(searchId: string) {
         sections.push('PREMISES');
         sections.push('Name,Address,Nature,Recce Status,Latitude,Longitude,Resources Assigned');
         search.premises.forEach((p: any) => {
-            sections.push(`"${p.name}","${p.address}","${p.nature}","${p.recceStatus}",${p.gpsLat || ''},${p.gpsLong || ''},${p._count.assignedResources}`);
+            sections.push(`${formatCsvField(p.name)},${formatCsvField(p.address)},${formatCsvField(p.nature)},${formatCsvField(p.recceStatus)},${p.gpsLat || ''},${p.gpsLong || ''},${p._count.assignedResources}`);
         });
         sections.push('');
 
@@ -82,7 +91,7 @@ export async function exportSearchReport(searchId: string) {
         sections.push('RESOURCES');
         sections.push('Type,Name,Rank/Designation,Contact');
         search.resources.forEach((r: any) => {
-            sections.push(`"${r.type}","${r.name}","${r.rank || r.designation || 'N/A'}","${r.contactNumber || 'N/A'}"`);
+            sections.push(`${formatCsvField(r.type)},${formatCsvField(r.name)},${formatCsvField(r.rank || r.designation || 'N/A')},${formatCsvField(r.contactNumber || 'N/A')}`);
         });
 
         return { success: true, data: sections.join('\n'), filename: `report-${search.name.toLowerCase().replace(/ /g, '-')}.csv` };
@@ -97,6 +106,9 @@ export async function exportAuditLogs() {
         const session = await getServerSession(authOptions);
         if (!session) return { success: false, error: 'Unauthorized' };
 
+        const roleCheck = await requireRole(['ADMIN', 'COMMANDER']);
+        if (!roleCheck.success) return { success: false, error: roleCheck.error };
+
         // Since we don't have an AuditLog table, we'll export a summary of recent data additions
         // as a surrogate for mission logs.
         const [cases, searches, premises] = await Promise.all([
@@ -108,9 +120,9 @@ export async function exportAuditLogs() {
         const logs = [];
         logs.push('Action,Entity Type,Entity Name,Timestamp');
 
-        cases.forEach(c => logs.push(`"CASE_INITIATED","CASE","${c.caseNumber}","${c.createdAt.toISOString()}"`));
-        searches.forEach(s => logs.push(`"SEARCH_PLANNED","SEARCH","${s.name} (${s.case.caseNumber})","${s.createdAt.toISOString()}"`));
-        premises.forEach(p => logs.push(`"PREMISE_IDENTIFIED","PREMISE","${p.name}","${p.createdAt.toISOString()}"`));
+        cases.forEach(c => logs.push(`"CASE_INITIATED","CASE",${formatCsvField(c.caseNumber)},"${c.createdAt.toISOString()}"`));
+        searches.forEach(s => logs.push(`"SEARCH_PLANNED","SEARCH",${formatCsvField(`${s.name} (${s.case.caseNumber})`)},"${s.createdAt.toISOString()}"`));
+        premises.forEach(p => logs.push(`"PREMISE_IDENTIFIED","PREMISE",${formatCsvField(p.name)},"${p.createdAt.toISOString()}"`));
 
         // Sort by timestamp
         const sortedLogs = logs.slice(1).sort((a, b) => {
@@ -131,6 +143,13 @@ export async function exportRequisitionReport(searchId: string) {
         const session = await getServerSession(authOptions);
         if (!session) return { success: false, error: 'Unauthorized' };
 
+        // Check access to the search's case
+        const search = await prisma.search.findUnique({ where: { id: searchId } });
+        if (!search) return { success: false, error: 'Search not found' };
+
+        const access = await requireCaseAccess(search.caseId, 'READ');
+        if (!access.success) return { success: false, error: access.error };
+
         const premises = await prisma.premise.findMany({
             where: { searchId },
             include: {
@@ -146,9 +165,9 @@ export async function exportRequisitionReport(searchId: string) {
         premises.forEach((p: any) => {
             const reqs = (p.requirements as any) || {};
             const row = [
-                `"${p.name}"`,
-                `"${p.address}"`,
-                `"${p.nature}"`,
+                formatCsvField(p.name),
+                formatCsvField(p.address),
+                formatCsvField(p.nature),
                 reqs.maleWitness || 0,
                 reqs.femaleWitness || 0,
                 reqs.crpfTeamSize || 0,
@@ -174,6 +193,16 @@ export async function exportResourceReport(type: 'OFFICIAL' | 'WITNESS' | 'CRPF'
     try {
         const session = await getServerSession(authOptions);
         if (!session) return { success: false, error: 'Unauthorized' };
+
+        if (searchId) {
+            const search = await prisma.search.findUnique({ where: { id: searchId } });
+            if (!search) return { success: false, error: 'Search not found' };
+            const access = await requireCaseAccess(search.caseId, 'READ');
+            if (!access.success) return { success: false, error: access.error };
+        } else {
+            const roleCheck = await requireRole(['ADMIN', 'COMMANDER']);
+            if (!roleCheck.success) return { success: false, error: roleCheck.error };
+        }
 
         const where: any = { type };
         if (searchId) where.searchId = searchId;
@@ -203,13 +232,13 @@ export async function exportResourceReport(type: 'OFFICIAL' | 'WITNESS' | 'CRPF'
         resources.forEach((r: any) => {
             let row: any[] = [];
             if (type === 'OFFICIAL') {
-                row = [`"${r.name}"`, `"${r.rank || ''}"`, `"${r.designation || ''}"`, `"${r.unit || ''}"`, `"${r.contactNumber || ''}"`, `"${r.status}"`, `"${r.search?.name || 'N/A'}"`];
+                row = [formatCsvField(r.name), formatCsvField(r.rank || ''), formatCsvField(r.designation || ''), formatCsvField(r.unit || ''), formatCsvField(r.contactNumber || ''), formatCsvField(r.status), formatCsvField(r.search?.name || 'N/A')];
             } else if (type === 'WITNESS') {
-                row = [`"${r.name}"`, `"${r.gender}"`, `"${r.address || ''}"`, `"${r.area || ''}"`, `"${r.idType || ''}"`, `"${r.idNumber || ''}"`, `"${r.contactNumber || ''}"`, `"${r.status}"`];
+                row = [formatCsvField(r.name), formatCsvField(r.gender), formatCsvField(r.address || ''), formatCsvField(r.area || ''), formatCsvField(r.idType || ''), formatCsvField(r.idNumber || ''), formatCsvField(r.contactNumber || ''), formatCsvField(r.status)];
             } else if (type === 'CRPF') {
-                row = [`"${r.name}"`, r.crpfMaleCount || 0, r.crpfFemaleCount || 0, `"${r.contactNumber || ''}"`, `"${r.status}"`, `"${r.search?.name || 'N/A'}"`];
+                row = [formatCsvField(r.name), r.crpfMaleCount || 0, r.crpfFemaleCount || 0, formatCsvField(r.contactNumber || ''), formatCsvField(r.status), formatCsvField(r.search?.name || 'N/A')];
             } else if (type === 'DRIVER') {
-                row = [`"${r.name}"`, `"${r.licenseNumber || ''}"`, `"${r.vehicleType || ''}"`, `"${r.vehicleRegNo || ''}"`, `"${r.contactNumber || ''}"`, `"${r.status}"`];
+                row = [formatCsvField(r.name), formatCsvField(r.licenseNumber || ''), formatCsvField(r.vehicleType || ''), formatCsvField(r.vehicleRegNo || ''), formatCsvField(r.contactNumber || ''), formatCsvField(r.status)];
             }
             csvRows.push(row.join(','));
         });
@@ -230,6 +259,16 @@ export async function exportPremisesReport(searchId?: string) {
         const session = await getServerSession(authOptions);
         if (!session) return { success: false, error: 'Unauthorized' };
 
+        if (searchId) {
+            const search = await prisma.search.findUnique({ where: { id: searchId } });
+            if (!search) return { success: false, error: 'Search not found' };
+            const access = await requireCaseAccess(search.caseId, 'READ');
+            if (!access.success) return { success: false, error: access.error };
+        } else {
+            const roleCheck = await requireRole(['ADMIN', 'COMMANDER']);
+            if (!roleCheck.success) return { success: false, error: roleCheck.error };
+        }
+
         const where: any = {};
         if (searchId) where.searchId = searchId;
 
@@ -247,11 +286,11 @@ export async function exportPremisesReport(searchId?: string) {
 
         premises.forEach((p: any) => {
             const row = [
-                `"${p.name}"`,
-                `"${p.address || ''}"`,
-                `"${p.search?.name || 'N/A'}"`,
-                `"${p.nature || ''}"`,
-                `"${p.recceStatus}"`,
+                formatCsvField(p.name),
+                formatCsvField(p.address || ''),
+                formatCsvField(p.search?.name || 'N/A'),
+                formatCsvField(p.nature || ''),
+                formatCsvField(p.recceStatus),
                 p.gpsLat || '',
                 p.gpsLong || ''
             ];
@@ -274,6 +313,9 @@ export async function getAuditLogs() {
     try {
         const session = await getServerSession(authOptions);
         if (!session) return { success: false, error: 'Unauthorized' };
+
+        const roleCheck = await requireRole(['ADMIN', 'COMMANDER']);
+        if (!roleCheck.success) return { success: false, error: roleCheck.error };
 
         // Surrogate audit logs based on recent database events
         const [cases, searches, premises] = await Promise.all([
@@ -328,4 +370,19 @@ function formatDate(date: Date) {
     if (diff < 3600000) return `${Math.floor(diff / 60000)} mins ago`;
     if (diff < 86400000) return `${Math.floor(diff / 3600000)} hours ago`;
     return date.toLocaleDateString();
+}
+
+function formatCsvField(value: any): string {
+    if (value === null || value === undefined) return '';
+    let stringValue = String(value);
+
+    // Mitigate CSV Injection
+    if (/^[=+\-@]/.test(stringValue)) {
+        stringValue = `'${stringValue}`;
+    }
+
+    // Escape double quotes
+    stringValue = stringValue.replace(/"/g, '""');
+
+    return `"${stringValue}"`;
 }

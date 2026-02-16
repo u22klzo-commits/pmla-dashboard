@@ -2,12 +2,21 @@
 
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
-
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { requireAuth, requireCaseAccess, requireRole } from "@/lib/rbac"
+import { caseCreateSchema, caseUpdateSchema } from "@/lib/schemas"
 
 export async function getCases() {
     try {
+        const auth = await requireAuth()
+        if (!auth.success) return []
+
+        const where: any = {}
+        // Viewers/Officers see assigned cases? or all? 
+        // Current logic was "all cases". Let's restrict if needed, but for now let's keep it open to authenticated users 
+        // to match original behavior, but wrapped in try/catch and auth check.
+        // Actually, original behavior was `prisma.case.findMany` with no where clause, so all cases. 
+        // But we should at least require login.
+
         const cases = await prisma.case.findMany({
             orderBy: { updatedAt: 'desc' },
             include: {
@@ -17,7 +26,7 @@ export async function getCases() {
                 owner: { select: { id: true, name: true, username: true, email: true } },
                 collaborators: { select: { id: true, name: true, username: true } }
             }
-        } as any)
+        })
         return cases
     } catch (error) {
         console.error("Failed to fetch cases:", error)
@@ -27,19 +36,22 @@ export async function getCases() {
 
 export async function createCase(data: { caseNumber: string; title: string; description?: string }) {
     try {
-        const session = await getServerSession(authOptions)
-        if (!session?.user?.id) {
-            return { success: false, error: "Unauthorized" }
+        const auth = await requireAuth()
+        if (!auth.success) return { success: false, error: auth.error }
+
+        const validatedFields = caseCreateSchema.safeParse(data)
+        if (!validatedFields.success) {
+            return { success: false, error: "Invalid fields", details: validatedFields.error.flatten() }
         }
 
         const newCase = await prisma.case.create({
             data: {
-                caseNumber: data.caseNumber,
-                title: data.title,
-                description: data.description,
-                status: 'OPEN',
-                ownerId: session.user.id
-            } as any
+                caseNumber: validatedFields.data.caseNumber,
+                title: validatedFields.data.title,
+                description: validatedFields.data.description,
+                status: 'ACTIVE', // Changed default to ACTIVE matching schema default if applicable, or explicit
+                ownerId: auth.session.user.id
+            }
         })
         revalidatePath('/dashboard/cases')
         return { success: true, data: newCase }
@@ -51,6 +63,9 @@ export async function createCase(data: { caseNumber: string; title: string; desc
 
 export async function updateCaseStatus(id: string, status: string) {
     try {
+        const access = await requireCaseAccess(id, 'WRITE')
+        if (!access.success) return { success: false, error: access.error }
+
         const updatedCase = await prisma.case.update({
             where: { id },
             data: { status }
@@ -65,6 +80,9 @@ export async function updateCaseStatus(id: string, status: string) {
 
 export async function getCaseById(id: string) {
     try {
+        const auth = await requireAuth()
+        if (!auth.success) return null
+
         const caseItem = await prisma.case.findUnique({
             where: { id },
             include: {
@@ -82,7 +100,12 @@ export async function getCaseById(id: string) {
                 owner: { select: { id: true, name: true, username: true, email: true } },
                 collaborators: { select: { id: true, name: true, username: true, email: true, role: true } }
             }
-        } as any)
+        })
+
+        // Optional: Check if user has access to view this specific case?
+        // For now, allowing all authenticated users to view details if they have the ID, 
+        // consistent with getCases() "public for auth users" logic.
+
         return caseItem
     } catch (error) {
         console.error("Failed to fetch case:", error)
@@ -92,12 +115,20 @@ export async function getCaseById(id: string) {
 
 export async function updateCase(id: string, data: { caseNumber: string; title: string; description?: string }) {
     try {
+        const access = await requireCaseAccess(id, 'WRITE')
+        if (!access.success) return { success: false, error: access.error }
+
+        const validatedFields = caseUpdateSchema.safeParse(data)
+        if (!validatedFields.success) {
+            return { success: false, error: "Invalid fields", details: validatedFields.error.flatten() }
+        }
+
         const updatedCase = await prisma.case.update({
             where: { id },
             data: {
-                caseNumber: data.caseNumber,
-                title: data.title,
-                description: data.description,
+                caseNumber: validatedFields.data.caseNumber,
+                title: validatedFields.data.title,
+                description: validatedFields.data.description,
             }
         })
         revalidatePath('/dashboard/cases')
@@ -111,6 +142,9 @@ export async function updateCase(id: string, data: { caseNumber: string; title: 
 
 export async function deleteCase(id: string) {
     try {
+        const access = await requireCaseAccess(id, 'DELETE')
+        if (!access.success) return { success: false, error: access.error }
+
         await prisma.case.delete({
             where: { id }
         })
@@ -124,15 +158,13 @@ export async function deleteCase(id: string) {
 
 export async function assignCaseOwner(caseId: string, newOwnerId: string) {
     try {
-        const session = await getServerSession(authOptions)
-        if (!session?.user?.id || session.user.role !== 'ADMIN') {
-            return { success: false, error: "Unauthorized: Admins only" }
-        }
+        const auth = await requireRole(['ADMIN'])
+        if (!auth.success) return { success: false, error: auth.error }
 
         const updatedCase = await prisma.case.update({
             where: { id: caseId },
             data: { ownerId: newOwnerId }
-        } as any)
+        })
 
         revalidatePath('/dashboard/cases')
         return { success: true, data: updatedCase }
@@ -144,16 +176,11 @@ export async function assignCaseOwner(caseId: string, newOwnerId: string) {
 
 export async function addCaseCollaborator(caseId: string, userId: string) {
     try {
-        const session = await getServerSession(authOptions)
-        if (!session?.user?.id) return { success: false, error: "Unauthorized" }
-
-        // Verify ownership (or Admin)
-        const currentCase = await prisma.case.findUnique({ where: { id: caseId } } as any)
-        if (!currentCase) return { success: false, error: "Case not found" }
-
-        if ((currentCase as any).ownerId !== session.user.id && session.user.role !== 'ADMIN') {
-            return { success: false, error: "Unauthorized: Only owner can add collaborators" }
-        }
+        // Only Owner or Admin can manage collaborators.
+        // requireCaseAccess(id, 'DELETE') enforces Owner or Admin. 
+        // So we can reuse 'DELETE' permission check effectively for Management rights.
+        const access = await requireCaseAccess(caseId, 'DELETE')
+        if (!access.success) return { success: false, error: "Unauthorized: Only owner or admin can add collaborators" }
 
         await prisma.case.update({
             where: { id: caseId },
@@ -162,7 +189,7 @@ export async function addCaseCollaborator(caseId: string, userId: string) {
                     connect: { id: userId }
                 }
             }
-        } as any)
+        })
 
         revalidatePath('/dashboard/cases')
         return { success: true }
@@ -174,16 +201,8 @@ export async function addCaseCollaborator(caseId: string, userId: string) {
 
 export async function removeCaseCollaborator(caseId: string, userId: string) {
     try {
-        const session = await getServerSession(authOptions)
-        if (!session?.user?.id) return { success: false, error: "Unauthorized" }
-
-        // Verify ownership (or Admin)
-        const currentCase = await prisma.case.findUnique({ where: { id: caseId } } as any)
-        if (!currentCase) return { success: false, error: "Case not found" }
-
-        if ((currentCase as any).ownerId !== session.user.id && session.user.role !== 'ADMIN') {
-            return { success: false, error: "Unauthorized: Only owner can remove collaborators" }
-        }
+        const access = await requireCaseAccess(caseId, 'DELETE')
+        if (!access.success) return { success: false, error: "Unauthorized: Only owner or admin can remove collaborators" }
 
         await prisma.case.update({
             where: { id: caseId },
@@ -192,7 +211,7 @@ export async function removeCaseCollaborator(caseId: string, userId: string) {
                     disconnect: { id: userId }
                 }
             }
-        } as any)
+        })
         revalidatePath('/dashboard/cases')
         return { success: true }
     } catch (error) {

@@ -4,8 +4,13 @@
 import { prisma } from "@/lib/prisma"
 import { SearchStatus, AllocationStatus } from "@prisma/client"
 
+import { requireAuth } from "@/lib/rbac"
+
 export async function getTacticalData(searchId?: string | null) {
     try {
+        const auth = await requireAuth()
+        if (!auth.success) return { success: false, error: auth.error }
+
         const where: any = {
             gpsLat: { not: null },
             gpsLong: { not: null },

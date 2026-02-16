@@ -8,9 +8,18 @@
  */
 export async function resolveGoogleMapsLink(url: string) {
     try {
-        if (!url.includes("google.com/maps") && !url.includes("goo.gl") && !url.includes("maps.app.goo.gl")) {
-            return { success: false, error: "Not a valid Google Maps link" }
+        let parsedUrl: URL;
+        try {
+            parsedUrl = new URL(url)
+        } catch {
+            return { success: false, error: "Invalid URL format" }
         }
+
+        const allowedHosts = ['google.com', 'www.google.com', 'goo.gl', 'maps.app.goo.gl']
+        if (!allowedHosts.includes(parsedUrl.hostname)) {
+            return { success: false, error: "Invalid domain. Only Google Maps links are allowed." }
+        }
+
 
         let finalUrl = url
 

@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { ResourceType, Gender, OfficialRank } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
+import { requireRole } from '@/lib/rbac';
 
 // Fallback if IdType is not exported
 enum IdType {
@@ -18,6 +19,9 @@ export async function bulkImportResources(type: ResourceType, data: any[], searc
     }
 
     try {
+        const auth = await requireRole(['ADMIN', 'COMMANDER', 'OFFICER'])
+        if (!auth.success) return { success: false, error: auth.error }
+
         const resourcesToCreate = data.map(item => {
             const baseResource = {
                 type,

@@ -3,8 +3,13 @@
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 
+import { requireAuth, requireRole } from "@/lib/rbac"
+
 export async function getFieldConfigs() {
     try {
+        const auth = await requireAuth()
+        if (!auth.success) return []
+
         const configs = await prisma.fieldConfig.findMany()
         return configs
     } catch (error) {
@@ -19,6 +24,9 @@ export async function updateFieldConfig(
     data: { isRequired?: boolean; isVisible?: boolean }
 ) {
     try {
+        const auth = await requireRole(['ADMIN'])
+        if (!auth.success) return { success: false, error: auth.error }
+
         await prisma.fieldConfig.upsert({
             where: {
                 viewName_fieldName: {
