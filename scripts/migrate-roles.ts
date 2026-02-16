@@ -15,7 +15,7 @@ async function main() {
 
     // 2. Migrate existing COMMANDERs to OFFICER
     const commanders = await prisma.user.updateMany({
-        where: { role: 'COMMANDER' },
+        where: { role: 'COMMANDER' as any },
         data: { role: 'OFFICER' }
     })
     console.log(`Migrated ${commanders.count} 'COMMANDER' users to 'OFFICER'.`)
