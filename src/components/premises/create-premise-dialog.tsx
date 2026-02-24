@@ -37,12 +37,12 @@ const formSchema = z.object({
     address: z.string().min(5, {
         message: 'Address is required.',
     }),
-    locationType: z.enum(['CITY', 'RURAL', 'REMOTE'] as const),
-    nature: z.enum(['RESIDENTIAL', 'OFFICE', 'FACTORY', 'WAREHOUSE', 'OTHER'] as const),
+    locationType: z.enum(['KOLKATA', 'OUTSIDE'] as const),
+    nature: z.enum(['RESIDENTIAL', 'COMMERCIAL', 'OFFICE', 'INDUSTRIAL', 'OTHERS'] as const),
     // New Fields
     occupantName: z.string().optional(),
     mobileNumber: z.string().optional(),
-    sourceOfInfo: z.enum(['INFORMER', 'SURVEILLANCE', 'OFFICIAL_RECORD', 'OTHER'] as const).optional(),
+    sourceOfInfo: z.enum(['INFORMER', 'COMPLAINT', 'INTELLIGENCE', 'OTHER'] as const).optional(),
     gpsLat: z.string().optional(), // Input as string, convert to number
     gpsLong: z.string().optional(),
     liveLocationUrl1: z.string().url().optional().or(z.literal('')),
@@ -76,7 +76,7 @@ export function CreatePremiseDialog({ searchId, open: externalOpen, onOpenChange
         defaultValues: {
             name: '',
             address: '',
-            locationType: 'CITY',
+            locationType: 'KOLKATA',
             nature: 'RESIDENTIAL',
             occupantName: '',
             mobileNumber: '',
@@ -184,10 +184,10 @@ export function CreatePremiseDialog({ searchId, open: externalOpen, onOpenChange
                                                 {...field}
                                             >
                                                 <option value="RESIDENTIAL">Residential</option>
+                                                <option value="COMMERCIAL">Commercial</option>
                                                 <option value="OFFICE">Office</option>
-                                                <option value="FACTORY">Factory</option>
-                                                <option value="WAREHOUSE">Warehouse</option>
-                                                <option value="OTHER">Other</option>
+                                                <option value="INDUSTRIAL">Industrial</option>
+                                                <option value="OTHERS">Others</option>
                                             </select>
                                         </FormControl>
                                         <FormMessage />
@@ -205,9 +205,8 @@ export function CreatePremiseDialog({ searchId, open: externalOpen, onOpenChange
                                                 className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                                 {...field}
                                             >
-                                                <option value="CITY">City</option>
-                                                <option value="RURAL">Rural</option>
-                                                <option value="REMOTE">Remote</option>
+                                                <option value="KOLKATA">Kolkata</option>
+                                                <option value="OUTSIDE">Outside</option>
                                             </select>
                                         </FormControl>
                                         <FormMessage />
@@ -226,8 +225,8 @@ export function CreatePremiseDialog({ searchId, open: externalOpen, onOpenChange
                                                 {...field}
                                             >
                                                 <option value="INFORMER">Informer</option>
-                                                <option value="SURVEILLANCE">Surveillance</option>
-                                                <option value="OFFICIAL_RECORD">Official Record</option>
+                                                <option value="COMPLAINT">Complaint</option>
+                                                <option value="INTELLIGENCE">Intelligence</option>
                                                 <option value="OTHER">Other</option>
                                             </select>
                                         </FormControl>

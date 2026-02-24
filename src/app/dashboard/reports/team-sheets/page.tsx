@@ -2,7 +2,7 @@
 import { getAllPremises } from "@/actions/premises"
 import { TeamSheetsClient } from "@/components/reports/team-sheets-client"
 import { getSelectedSearchId } from "@/lib/services/search-service"
-import { ExportButton } from "@/components/dashboard/export-button"
+import { ReportExportButtons } from "@/components/reports/report-export-buttons"
 
 export const dynamic = 'force-dynamic'
 
@@ -67,12 +67,32 @@ export default async function TeamSheetsPage() {
         }
     })
 
+    // Prepare tabular data for PDF/CSV export
+    const exportHeaders = ['Premise', 'Address', 'Team Leader', 'Rank', 'Officers', 'Witnesses', 'CRPF Strength', 'Drivers']
+    const exportRows = formattedData.map(d => [
+        d.name,
+        d.address,
+        d.teamLeader?.name || '—',
+        d.teamLeader?.rank || '—',
+        d.officers.map(o => `${o.name} (${o.rank})`).join('; ') || '—',
+        d.witnesses.map(w => w.name).join('; ') || '—',
+        d.crpf.reduce((acc, c) => acc + c.strength, 0),
+        d.drivers.map(dr => dr.name).join('; ') || '—',
+    ])
+
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <div className="flex items-center justify-between space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">Team Sheets</h2>
                 <div className="flex items-center space-x-2">
-                    <ExportButton type="auto" searchId={isGlobal ? undefined : searchId} />
+                    <ReportExportButtons
+                        title="Team Sheets Report"
+                        subtitle="Premise-wise team deployment details"
+                        headers={exportHeaders}
+                        rows={exportRows}
+                        filename="team_sheets_report"
+                        orientation="landscape"
+                    />
                 </div>
             </div>
             <TeamSheetsClient data={formattedData} />

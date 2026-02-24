@@ -6,6 +6,8 @@ import { DataTable } from "@/components/ui/data-table"
 import { premiseColumns } from "@/components/operations/premise-columns"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { SearchMapWrapper } from "@/components/maps/search-map-wrapper"
+import { BulkPremiseActions } from "@/components/premises/bulk-premise-actions"
+import { DashboardInfoTooltip } from "@/components/ui/dashboard-info-tooltip"
 
 export const dynamic = "force-dynamic"
 
@@ -46,6 +48,12 @@ export default async function PremiseMasterPage() {
                     <h2 className="text-3xl font-bold tracking-tight">
                         {currentSearch ? `Premises: ${currentSearch.name}` : "All Premises"}
                     </h2>
+                    <DashboardInfoTooltip content={[
+                        "📋 This is the Premises Master view — manage all search premises.",
+                        "📥 Use 'Bulk Import' to upload premises via CSV template.",
+                        "🗺️ The map shows geospatial distribution of premises with GPS data.",
+                        "📊 Click any premise row to view details and manage allocations."
+                    ]} />
                     {currentSearch && (
                         <p className="text-muted-foreground text-sm">
                             Case: {currentSearch.case.caseNumber}
@@ -54,10 +62,13 @@ export default async function PremiseMasterPage() {
                 </div>
                 <div className="flex flex-col items-end gap-2">
                     {currentSearch && (
-                        <SearchSwitcher
-                            currentSearchId={currentSearch.id}
-                            searches={(currentSearch.case.searches || []) as any}
-                        />
+                        <>
+                            <SearchSwitcher
+                                currentSearchId={currentSearch.id}
+                                searches={(currentSearch.case.searches || []) as any}
+                            />
+                            <BulkPremiseActions searchId={currentSearch.id} />
+                        </>
                     )}
                 </div>
             </div>

@@ -16,9 +16,9 @@ import { MapWidgetWrapper } from "@/components/dashboard/map-widget-wrapper"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { KPICards } from "@/components/dashboard/kpi-cards"
 import { QuickActions } from "@/components/dashboard/quick-actions"
-import { RecentOperations } from "@/components/dashboard/recent-operations"
-import { LiveUpdates } from "@/components/dashboard/live-updates"
+import { CaseSearchSummary } from "@/components/dashboard/case-search-summary"
 import { AnimatedLayout, AnimatedGridItem } from "@/components/dashboard/animated-layout"
+import { DashboardInfoTooltip } from "@/components/ui/dashboard-info-tooltip"
 
 export default async function DashboardPage() {
     const session = await getServerSession(authOptions)
@@ -66,16 +66,12 @@ export default async function DashboardPage() {
                     </AnimatedGridItem>
                 </div>
 
-                {/* RIGHT COLUMN: Recent Activity & Live Updates */}
+                {/* RIGHT COLUMN: Case-wise Reports */}
                 <div className="col-span-1 md:col-span-4 lg:col-span-2 flex flex-col gap-3 min-h-0">
-                    <AnimatedGridItem className="h-fit">
+                    <AnimatedGridItem className="flex-1 min-h-0 overflow-auto">
                         <Suspense fallback={<RecentOperationsSkeleton />}>
-                            <RecentOperations />
+                            <CaseSearchSummary selectedSearchId={selectedSearchId} />
                         </Suspense>
-                    </AnimatedGridItem>
-
-                    <AnimatedGridItem className="flex-1 min-h-0">
-                        <LiveUpdates className="h-full" />
                     </AnimatedGridItem>
                 </div>
 

@@ -3,7 +3,7 @@ import { getAllPremises } from "@/actions/premises"
 import { SeniorReportClient } from "@/components/reports/senior-report-client"
 import { OfficialRank, ResourceType } from "@prisma/client"
 import { getSelectedSearchId } from "@/lib/services/search-service"
-import { ExportButton } from "@/components/dashboard/export-button"
+import { ReportExportButtons } from "@/components/reports/report-export-buttons"
 
 export const dynamic = 'force-dynamic'
 
@@ -61,12 +61,35 @@ export default async function SeniorReportPage() {
         }
     })
 
+    // Prepare export data for senior-level presentation
+    const exportHeaders = ['S.No.', 'Premise', 'Address', 'Location Type', 'Team Leader', 'TL Rank', 'TL Mobile', 'Officers', 'Witnesses', 'CRPF Strength', 'Drivers']
+    const exportRows = formattedData.map((d, i) => [
+        i + 1,
+        d.name,
+        d.address,
+        d.locationType || '—',
+        d.teamLeader?.name || '—',
+        d.teamLeader?.rank || '—',
+        d.teamLeader?.mobile || '—',
+        d.officers.map(o => `${o.name} (${o.rank})`).join('; ') || '—',
+        d.witnesses.map(w => w.name).join('; ') || '—',
+        d.crpfStrength,
+        d.driverCount,
+    ])
+
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <div className="flex items-center justify-between space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">Senior Report</h2>
                 <div className="flex items-center space-x-2">
-                    <ExportButton type="auto" searchId={isGlobal ? undefined : searchId} />
+                    <ReportExportButtons
+                        title="Senior Operations Report"
+                        subtitle="Comprehensive premise-wise deployment summary for senior officials"
+                        headers={exportHeaders}
+                        rows={exportRows}
+                        filename="senior_operations_report"
+                        orientation="landscape"
+                    />
                 </div>
             </div>
             <SeniorReportClient data={formattedData} />

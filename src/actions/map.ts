@@ -41,7 +41,9 @@ export async function getTacticalData(searchId?: string | null) {
                 coords: [p.gpsLat!, p.gpsLong!] as [number, number],
                 status: p.search.status === 'ACTIVE' ? 'Alert' : (p.search.status === 'COMPLETED' ? 'Monitoring' : 'Planned'),
                 searchName: p.search.name,
-                intensity: p.search.status === 'ACTIVE' ? 'Critical' : 'Medium'
+                intensity: p.search.status === 'ACTIVE' ? 'Critical' : 'Medium',
+                liveLocationUrl1: p.liveLocationUrl1,
+                liveLocationUrl2: p.liveLocationUrl2,
             }))
         };
     } catch (error) {

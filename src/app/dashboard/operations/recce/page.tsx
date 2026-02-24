@@ -8,6 +8,7 @@ import { Heading } from "@/components/ui/heading"
 import { Separator } from "@/components/ui/separator"
 import { Breadcrumbs } from "@/components/breadcrumbs"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { DashboardInfoTooltip } from "@/components/ui/dashboard-info-tooltip"
 
 export const dynamic = "force-dynamic"
 
@@ -31,11 +32,29 @@ export default async function RecceStagePage() {
             <Breadcrumbs items={breadcrumbItems} />
 
             <div className="flex items-start justify-between">
-                <Heading
-                    title={`Tactical Intelligence (${premises.length})`}
-                    description="Strategic reconnaissance and target identification mapping."
-                />
+                <div className="flex items-center gap-2">
+                    <Heading
+                        title={`Tactical Intelligence (${premises.length})`}
+                        description="Strategic reconnaissance and target identification mapping."
+                    />
+                    <DashboardInfoTooltip content={[
+                        "🔍 Recce (Reconnaissance) is for tactical field intelligence.",
+                        "📷 Unlike Premises, this view supports live field verification with photo uploads.",
+                        "🗺️ Drag markers to update coordinates from the field.",
+                        "📊 Status updates here feed into the decision-making pipeline.",
+                        "⚡ Unlike Premises Master, this is optimized for real-time field operations."
+                    ]} />
+                </div>
             </div>
+
+            <Alert className="bg-indigo-500/10 text-indigo-400 border-indigo-500/20 mb-2">
+                <AlertCircle className="h-4 w-4" stroke="currentColor" />
+                <AlertTitle className="text-sm font-semibold">Recce Dashboard — Field Operations View</AlertTitle>
+                <AlertDescription className="text-xs">
+                    This view is designed for field reconnaissance. It includes tactical map overlays, live location tracking,
+                    and field photo verification — features not available in the standard Premises view.
+                </AlertDescription>
+            </Alert>
 
             <Separator />
 

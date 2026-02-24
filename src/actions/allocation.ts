@@ -40,7 +40,8 @@ export async function autoAllocateResources(searchId: string) {
         const pool = {
             maleWitness: availableResources.filter(r => r.type === 'WITNESS' && r.gender === 'MALE'),
             femaleWitness: availableResources.filter(r => r.type === 'WITNESS' && r.gender === 'FEMALE'),
-            official: availableResources.filter(r => r.type === 'OFFICIAL'),
+            // NOTE: Officials (OFFICIAL type) are excluded from auto-allocation per policy.
+            // Officers must be manually assigned to premises.
             driver: availableResources.filter(r => r.type === 'DRIVER'),
             crpf: availableResources.filter(r => r.type === 'CRPF'),
         }
@@ -78,7 +79,7 @@ export async function autoAllocateResources(searchId: string) {
 
             if (reqs.maleWitness) allocate('maleWitness', reqs.maleWitness)
             if (reqs.femaleWitness) allocate('femaleWitness', reqs.femaleWitness)
-            if (reqs.official) allocate('official', reqs.official)
+            // Officers (official) are NOT auto-allocated — they must be manually assigned
             if (reqs.driver) allocate('driver', reqs.driver)
             if (reqs.crpf) allocate('crpf', reqs.crpf)
 

@@ -52,6 +52,8 @@ interface TacticalPoint {
     status: string
     searchName: string
     intensity: string
+    liveLocationUrl1?: string | null
+    liveLocationUrl2?: string | null
 }
 
 export function MapWidget({ className, searchId }: MapWidgetProps) {
@@ -244,6 +246,34 @@ export function MapWidget({ className, searchId }: MapWidgetProps) {
                                                 />
                                             </div>
                                         </div>
+                                        {/* Live Location Links */}
+                                        {(spot.liveLocationUrl1 || spot.liveLocationUrl2) && (
+                                            <div className="mt-2 pt-2 border-t border-white/10 space-y-1">
+                                                <span className="text-[9px] uppercase tracking-tighter text-muted-foreground">Live Location</span>
+                                                <div className="flex gap-2">
+                                                    {spot.liveLocationUrl1 && (
+                                                        <a
+                                                            href={spot.liveLocationUrl1}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-[10px] text-primary hover:underline font-medium"
+                                                        >
+                                                            📍 View Map 1
+                                                        </a>
+                                                    )}
+                                                    {spot.liveLocationUrl2 && (
+                                                        <a
+                                                            href={spot.liveLocationUrl2}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-[10px] text-primary hover:underline font-medium"
+                                                        >
+                                                            📍 View Map 2
+                                                        </a>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </Popup>
                             </Marker>
