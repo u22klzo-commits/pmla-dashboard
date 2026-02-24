@@ -49,10 +49,10 @@ export default async function RecceStagePage() {
 
             <Alert className="bg-indigo-500/10 text-indigo-400 border-indigo-500/20 mb-2">
                 <AlertCircle className="h-4 w-4" stroke="currentColor" />
-                <AlertTitle className="text-sm font-semibold">Recce Dashboard — Field Operations View</AlertTitle>
+                <AlertTitle className="text-sm font-semibold">Recce Dashboard — Rapid Field Operations</AlertTitle>
                 <AlertDescription className="text-xs">
-                    This view is designed for field reconnaissance. It includes tactical map overlays, live location tracking,
-                    and field photo verification — features not available in the standard Premises view.
+                    Click any target on the map to open the inline Recce panel — update status, add field notes, photo links, and live
+                    locations without leaving the map. Use Prev/Next to cycle through premises sequentially.
                 </AlertDescription>
             </Alert>
 

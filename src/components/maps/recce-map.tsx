@@ -6,7 +6,7 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { X, Plus } from 'lucide-react'
+import { X, Plus, MapPin } from 'lucide-react'
 import { cn } from "@/lib/utils"
 import { RouteBuilderPanel, RoutePoint } from "./route-builder-panel"
 import { MapSearchOverlay, LocationResult } from "./map-search-overlay"
@@ -121,6 +121,8 @@ interface MapPremise {
     color: string
     recceStatus: string
     owner: string
+    liveLocationUrl1?: string | null
+    liveLocationUrl2?: string | null
 }
 
 interface CustomMarker {
@@ -329,6 +331,20 @@ export default function RecceMap({
                                             <Badge variant="outline" className="text-[10px] h-5">
                                                 {premise.recceStatus}
                                             </Badge>
+
+                                            <div className="flex gap-1 ml-2">
+                                                {premise.liveLocationUrl1 && (
+                                                    <a href={premise.liveLocationUrl1} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700">
+                                                        <MapPin className="h-3.5 w-3.5" />
+                                                    </a>
+                                                )}
+                                                {premise.liveLocationUrl2 && (
+                                                    <a href={premise.liveLocationUrl2} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700">
+                                                        <MapPin className="h-3.5 w-3.5" />
+                                                    </a>
+                                                )}
+                                            </div>
+
                                             <Button
                                                 size="sm"
                                                 variant="ghost"

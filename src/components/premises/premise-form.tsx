@@ -63,13 +63,7 @@ const premiseFormSchema = z.object({
     occupantName: z.string().optional(),
     mobileNumber: z.string().optional(),
     sourceOfInfo: z.enum(['INFORMER', 'COMPLAINT', 'INTELLIGENCE', 'OTHER']).optional(),
-    gpsLat: z.number().optional(),
-    gpsLong: z.number().optional(),
-    distanceFromCrpfCamp: z.number().optional(),
-    liveLocationUrl1: z.string().url().optional().or(z.literal('')),
-    liveLocationUrl2: z.string().url().optional().or(z.literal('')),
-    photoUrl: z.string().url().optional().or(z.literal('')),
-    recceNotes: z.string().optional(),
+    // Operational Recce fields removed from this form to enforce separation of concerns
 })
 
 export type PremiseFormValues = z.infer<typeof premiseFormSchema>
@@ -116,13 +110,6 @@ export function PremiseForm({ searchId, premise, onSuccess }: PremiseFormProps) 
             occupantName: premise?.occupantName || '',
             mobileNumber: premise?.mobileNumber || '',
             sourceOfInfo: (premise?.sourceOfInfo as PremiseFormValues['sourceOfInfo']) || undefined,
-            gpsLat: premise?.gpsLat ?? undefined,
-            gpsLong: premise?.gpsLong ?? undefined,
-            distanceFromCrpfCamp: premise?.distanceFromCrpfCamp ?? undefined,
-            liveLocationUrl1: premise?.liveLocationUrl1 || '',
-            liveLocationUrl2: premise?.liveLocationUrl2 || '',
-            photoUrl: premise?.photoUrl || '',
-            recceNotes: premise?.recceNotes || '',
         },
     })
 
@@ -141,13 +128,6 @@ export function PremiseForm({ searchId, premise, onSuccess }: PremiseFormProps) 
                     occupantName: values.occupantName,
                     mobileNumber: values.mobileNumber,
                     sourceOfInfo: values.sourceOfInfo,
-                    gpsLat: values.gpsLat,
-                    gpsLong: values.gpsLong,
-                    distanceFromCrpfCamp: values.distanceFromCrpfCamp,
-                    liveLocationUrl1: values.liveLocationUrl1,
-                    liveLocationUrl2: values.liveLocationUrl2,
-                    photoUrl: values.photoUrl,
-                    recceNotes: values.recceNotes,
                 })
 
                 if (result.success) {
@@ -168,13 +148,6 @@ export function PremiseForm({ searchId, premise, onSuccess }: PremiseFormProps) 
                     occupantName: values.occupantName,
                     mobileNumber: values.mobileNumber,
                     sourceOfInfo: values.sourceOfInfo,
-                    gpsLat: values.gpsLat,
-                    gpsLong: values.gpsLong,
-                    distanceFromCrpfCamp: values.distanceFromCrpfCamp,
-                    liveLocationUrl1: values.liveLocationUrl1,
-                    liveLocationUrl2: values.liveLocationUrl2,
-                    photoUrl: values.photoUrl,
-                    recceNotes: values.recceNotes,
                 })
 
                 if (result.success) {
@@ -352,160 +325,6 @@ export function PremiseForm({ searchId, premise, onSuccess }: PremiseFormProps) 
                     </div>
                 </div>
 
-                {/* Location & GPS Section */}
-                <div className="space-y-4">
-                    <h3 className="text-lg font-medium">Location & GPS</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <FormField
-                            control={form.control}
-                            name="gpsLat"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>GPS Latitude</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            type="number"
-                                            step="any"
-                                            placeholder="e.g. 22.5726"
-                                            value={field.value ?? ''}
-                                            onChange={(e) => {
-                                                const val = e.target.value
-                                                field.onChange(val === '' ? undefined : parseFloat(val))
-                                            }}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="gpsLong"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>GPS Longitude</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            type="number"
-                                            step="any"
-                                            placeholder="e.g. 88.3639"
-                                            value={field.value ?? ''}
-                                            onChange={(e) => {
-                                                const val = e.target.value
-                                                field.onChange(val === '' ? undefined : parseFloat(val))
-                                            }}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="distanceFromCrpfCamp"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Distance from CRPF Camp (km)</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            type="number"
-                                            step="0.1"
-                                            placeholder="e.g. 5.5"
-                                            value={field.value ?? ''}
-                                            onChange={(e) => {
-                                                const val = e.target.value
-                                                field.onChange(val === '' ? undefined : parseFloat(val))
-                                            }}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="liveLocationUrl1"
-                            render={({ field }) => (
-                                <FormItem className="md:col-span-3">
-                                    <FormLabel>Live Location URL 1</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            type="url"
-                                            placeholder="https://maps.google.com/..."
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormDescription>
-                                        Google Maps or similar location link
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="liveLocationUrl2"
-                            render={({ field }) => (
-                                <FormItem className="md:col-span-3">
-                                    <FormLabel>Live Location URL 2 (Backup)</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            type="url"
-                                            placeholder="https://maps.google.com/..."
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="photoUrl"
-                            render={({ field }) => (
-                                <FormItem className="md:col-span-3">
-                                    <FormLabel>Photo Link</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            type="url"
-                                            placeholder="https://drive.google.com/..."
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormDescription>
-                                        Link to premise photo (Google Drive, etc.)
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </div>
-                </div>
-
-                {/* Recce Notes Section */}
-                <div className="space-y-4">
-                    <h3 className="text-lg font-medium">Recce Notes</h3>
-                    <FormField
-                        control={form.control}
-                        name="recceNotes"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Preliminary Notes</FormLabel>
-                                <FormControl>
-                                    <Textarea
-                                        placeholder="Entry/exit points, security measures, observation times, etc."
-                                        className="min-h-[100px]"
-                                        {...field}
-                                    />
-                                </FormControl>
-                                <FormDescription>
-                                    Any observations from initial reconnaissance
-                                </FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
 
                 {/* Action Buttons */}
                 <div className="flex justify-end gap-4 pt-4 border-t">
@@ -522,6 +341,6 @@ export function PremiseForm({ searchId, premise, onSuccess }: PremiseFormProps) 
                     </Button>
                 </div>
             </form>
-        </Form>
+        </Form >
     )
 }

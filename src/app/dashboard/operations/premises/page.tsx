@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { SearchMapWrapper } from "@/components/maps/search-map-wrapper"
 import { BulkPremiseActions } from "@/components/premises/bulk-premise-actions"
 import { DashboardInfoTooltip } from "@/components/ui/dashboard-info-tooltip"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Database } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
@@ -72,6 +74,15 @@ export default async function PremiseMasterPage() {
                     )}
                 </div>
             </div>
+
+            <Alert className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 mb-2">
+                <Database className="h-4 w-4" stroke="currentColor" />
+                <AlertTitle className="text-sm font-semibold">Premises Master — Data Management Hub</AlertTitle>
+                <AlertDescription className="text-xs">
+                    Add, import, edit, and manage all premises. Use bulk CSV import for batch operations. For rapid field recce
+                    updates, switch to the Recce dashboard.
+                </AlertDescription>
+            </Alert>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <Card className="lg:col-span-2">

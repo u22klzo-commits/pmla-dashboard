@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { PremiseNature, LocationType } from "@prisma/client"
+import { prisma } from "@/lib/prisma"
 import { premiseService } from "@/lib/services/premise-service"
 import { searchService } from "@/lib/services/search-service"
 
@@ -234,5 +235,40 @@ export async function getRecceData(searchId?: string | null) {
         premises: premisesResult.success ? premisesResult.data || [] : [],
         search: searchResult.success ? searchResult.data : null,
         isGlobal
+    }
+}
+
+// Quick-update recce-specific fields only (for inline panel)
+export async function quickUpdateRecceFields(
+    premiseId: string,
+    data: {
+        recceNotes?: string
+        photoUrl?: string
+        liveLocationUrl1?: string
+        liveLocationUrl2?: string
+        gpsLat?: number | null
+        gpsLong?: number | null
+        distanceFromCrpfCamp?: number | null
+    }
+) {
+    try {
+        await prisma.premise.update({
+            where: { id: premiseId },
+            data: {
+                recceNotes: data.recceNotes ?? null,
+                photoUrl: data.photoUrl ?? null,
+                liveLocationUrl1: data.liveLocationUrl1 ?? null,
+                liveLocationUrl2: data.liveLocationUrl2 ?? null,
+                gpsLat: data.gpsLat,
+                gpsLong: data.gpsLong,
+                distanceFromCrpfCamp: data.distanceFromCrpfCamp,
+            }
+        })
+        revalidatePath('/dashboard/operations/recce')
+        revalidatePath('/dashboard/operations/premises')
+        return { success: true }
+    } catch (error) {
+        console.error("Failed to update recce fields:", error)
+        return { success: false, error: "Failed to save recce fields" }
     }
 }
